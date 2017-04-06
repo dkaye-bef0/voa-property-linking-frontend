@@ -22,12 +22,12 @@ import org.joda.time.DateTime
 import session.LinkingSessionRequest
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http._
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class PropertyLinkConnector(http: HttpGet with HttpPut with HttpPost)(implicit ec: ExecutionContext)
-  extends ServicesConfig {
-  lazy val baseUrl: String = baseUrl("property-representations") + s"/property-linking"
+class PropertyLinkConnector(http: HttpGet with HttpPut with HttpPost, servicesConfig: ServicesConfig) {
+  lazy val baseUrl: String = servicesConfig.baseUrl("property-representations") + s"/property-linking"
 
   def get(organisationId: Int, authorisationId: Long)(implicit hc: HeaderCarrier): Future[Option[PropertyLink]] = {
     linkedProperties(organisationId).map( links => links.find(_.authorisationId == authorisationId) )

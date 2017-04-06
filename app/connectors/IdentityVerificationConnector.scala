@@ -24,16 +24,16 @@ import uk.gov.hmrc.play.http._
 
 import scala.concurrent.Future
 
-class IdentityVerification(http: HttpGet with HttpPost) extends ServicesConfig {
+class IdentityVerificationConnector(http: HttpGet with HttpPost, servicesConfig: ServicesConfig, appConfig: ApplicationConfig) {
 
-  val url = baseUrl("identity-verification")
-  private val successUrl = ApplicationConfig.baseUrl + controllers.routes.IdentityVerification.restoreSession.url
-  private val failureUrl = ApplicationConfig.baseUrl + controllers.routes.IdentityVerification.fail.url
+  val url = servicesConfig.baseUrl("identity-verification")
+  private val successUrl = appConfig.applicationBaseUrl + controllers.routes.IdentityVerification.restoreSession.url
+  private val failureUrl = appConfig.applicationBaseUrl + controllers.routes.IdentityVerification.fail.url
 
-  def verifyUrl = s"${ApplicationConfig.sivUrl}/mdtp/confirm?origin=voa&completionURL=$successUrl&failureURL=$failureUrl&confidenceLevel=200"
+  def verifyUrl = s"${appConfig.sivUrl}/mdtp/confirm?origin=voa&completionURL=$successUrl&failureURL=$failureUrl&confidenceLevel=200"
 
   def verifySuccess(journeyId: String)(implicit hc: HeaderCarrier) = {
-    if (ApplicationConfig.ivEnabled) {
+    if (appConfig.ivEnabled) {
       http.GET[JsValue](s"$url/mdtp/journey/journeyId/$journeyId") map { r =>
         r \ "result" match {
           case JsDefined(JsString("Success")) => true

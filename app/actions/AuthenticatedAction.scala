@@ -17,7 +17,6 @@
 package actions
 
 import auth.GovernmentGatewayProvider
-import config.Wiring
 import connectors._
 import models.{DetailedIndividualAccount, GroupAccount}
 import play.api.i18n.Messages
@@ -28,17 +27,16 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-class AuthenticatedAction {
+class AuthenticatedAction(ggProvider: GovernmentGatewayProvider,
+                          businessRatesAuthorisation: BusinessRatesAuthorisation,
+                          groupAccounts: GroupAccounts,
+                          individualAccounts: IndividualAccounts) {
   implicit def hc(implicit request: Request[_]): HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers, Some(request.session))
 
-  val businessRatesAuthentication = Wiring().businessRatesAuthentication
-  val groupAccounts = Wiring().groupAccountConnector
-  val individualAccounts = Wiring().individualAccountConnector
-
   def apply(body: BasicAuthenticatedRequest[AnyContent] => Future[Result]) = Action.async { implicit request =>
-    businessRatesAuthentication.authenticate flatMap {
+    businessRatesAuthorisation.authenticate flatMap {
       case Authenticated(accounts) => body(BasicAuthenticatedRequest(accounts.organisation, accounts.person, request))
-      case InvalidGGSession => GovernmentGatewayProvider.redirectToLogin
+      case InvalidGGSession => ggProvider.redirectToLogin
       case NoVOARecord => Future.successful(Redirect(controllers.routes.CreateIndividualAccount.show))
       case IncorrectTrustId => Future.successful(Unauthorized("Trust ID does not match"))
     }
@@ -54,9 +52,9 @@ class AuthenticatedAction {
 
   def toViewAssessment(authorisationId: Long, assessmentRef: Long)(body: BasicAuthenticatedRequest[AnyContent] => Future[Result]) = {
     Action.async { implicit request =>
-      businessRatesAuthentication.authorise(authorisationId, assessmentRef) flatMap {
+      businessRatesAuthorisation.authorise(authorisationId, assessmentRef) flatMap {
         case Authenticated(accounts) => body(BasicAuthenticatedRequest(accounts.organisation, accounts.person, request))
-        case InvalidGGSession => GovernmentGatewayProvider.redirectToLogin
+        case InvalidGGSession => ggProvider.redirectToLogin
         case NoVOARecord => Future.successful(Redirect(controllers.routes.CreateIndividualAccount.show))
         case IncorrectTrustId => Future.successful(Unauthorized("Trust ID does not match"))
       }
@@ -69,6 +67,7 @@ sealed trait AuthenticatedRequest[A] extends Request[A] {
   val individualAccount: DetailedIndividualAccount
 
   def organisationId: Int = organisationAccount.id
+
   def personId: Int = individualAccount.individualId
 }
 

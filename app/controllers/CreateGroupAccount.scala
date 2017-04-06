@@ -16,87 +16,86 @@
 
 package controllers
 
-import config.Wiring
+import auth.GGAction
+import config.VPLSessionCache
+import connectors._
 import form.Mappings._
 import form.TextMatching
 import models.{Address, IndividualAccount}
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.data.validation.Constraints
+import play.api.i18n.MessagesApi
 import uk.gov.hmrc.play.http.HeaderCarrier
 import views.helpers.Errors
 
 import scala.concurrent.Future
 
-trait CreateGroupAccount extends PropertyLinkingController {
-  lazy val groups = Wiring().groupAccountConnector
-  lazy val individuals = Wiring().individualAccountConnector
-  lazy val auth = Wiring().authConnector
-  lazy val ggAction = Wiring().ggAction
-  lazy val keystore = Wiring().sessionCache
-  lazy val identityVerification = Wiring().identityVerification
-  lazy val addresses = Wiring().addresses
+class CreateGroupAccount(groups: GroupAccounts,
+                         individuals: IndividualAccounts,
+                         auth: VPLAuthConnector,
+                         ggAction: GGAction,
+                         keystore: VPLSessionCache,
+                         identityVerification: IdentityVerificationConnector,
+                         addresses: Addresses,
+                         val messagesApi: MessagesApi
+                        ) extends PropertyLinkingController {
 
-  def show = ggAction.async { _ => implicit request =>
-    request.session.get("journeyId").fold(Future.successful(Unauthorized("Unauthorised"))) { journeyId =>
-      identityVerification.verifySuccess(journeyId) flatMap {
-        case true => Ok(views.html.createAccount.group(form))
-        case false => Unauthorized("Unauthorised")
+  import CreateGroupAccount._
+
+  def show = ggAction.async { _ =>
+    implicit request =>
+      request.session.get("journeyId").fold(Future.successful(Unauthorized("Unauthorised"))) { journeyId =>
+        identityVerification.verifySuccess(journeyId) flatMap {
+          case true => Ok(views.html.createAccount.group(form))
+          case false => Unauthorized("Unauthorised")
+        }
       }
-    }
   }
 
-  def success = ggAction.async { _ => implicit request =>
-    request.session.get("journeyId").fold(Future.successful(Unauthorized("Unauthorised"))) { journeyId =>
-      identityVerification.verifySuccess(journeyId) flatMap {
-        case true => Ok(views.html.createAccount.confirmation())
-        case false => Unauthorized("Unauthorised")
+  def success = ggAction.async { _ =>
+    implicit request =>
+      request.session.get("journeyId").fold(Future.successful(Unauthorized("Unauthorised"))) { journeyId =>
+        identityVerification.verifySuccess(journeyId) flatMap {
+          case true => Ok(views.html.createAccount.confirmation())
+          case false => Unauthorized("Unauthorised")
+        }
       }
-    }
   }
 
-  def submit = ggAction.async { ctx => implicit request =>
-    request.session.get("journeyId").fold(Future.successful(Unauthorized("Unauthorised"))) { journeyId =>
-      identityVerification.verifySuccess(journeyId) flatMap {
-        case true =>
-          form.bindFromRequest().fold(
-            errors => BadRequest(views.html.createAccount.group(errors)),
-            formData => {
-              val eventualGroupId = auth.getGroupId(ctx)
-              val eventualExternalId = auth.getExternalId(ctx)
-              val eventualPersonalDetails = keystore.getPersonalDetails
-              val addressId = registerAddress(formData)
+  def submit = ggAction.async { ctx =>
+    implicit request =>
+      request.session.get("journeyId").fold(Future.successful(Unauthorized("Unauthorised"))) { journeyId =>
+        identityVerification.verifySuccess(journeyId) flatMap {
+          case true =>
+            form.bindFromRequest().fold(
+              errors => BadRequest(views.html.createAccount.group(errors)),
+              formData => {
+                val eventualGroupId = auth.getGroupId(ctx)
+                val eventualExternalId = auth.getExternalId(ctx)
+                val eventualPersonalDetails = keystore.getPersonalDetails
+                val addressId = registerAddress(formData)
 
-              for {
-                groupId <- eventualGroupId
-                userId <- eventualExternalId
-                details <- eventualPersonalDetails
-                id <- addressId
-                organisationId <- groups.create(groupId, id, formData)
-                _ <- individuals.create(IndividualAccount(userId, journeyId, organisationId, details.individualDetails))
-              } yield {
-                Redirect(routes.CreateGroupAccount.success())
+                for {
+                  groupId <- eventualGroupId
+                  userId <- eventualExternalId
+                  details <- eventualPersonalDetails
+                  id <- addressId
+                  organisationId <- groups.create(groupId, id, formData)
+                  _ <- individuals.create(IndividualAccount(userId, journeyId, organisationId, details.individualDetails))
+                } yield {
+                  Redirect(routes.CreateGroupAccount.success())
+                }
               }
-            }
-          )
-        case false => Unauthorized("Unauthorised")
+            )
+          case false => Unauthorized("Unauthorised")
+        }
       }
-    }
   }
 
   private def registerAddress(details: GroupAccountDetails)(implicit hc: HeaderCarrier): Future[Int] = details.address.addressUnitId match {
     case Some(id) => Future.successful(id)
     case None => addresses.create(details.address)
-  }
-
-  lazy val keys = new {
-    val companyName = "companyName"
-    val address = "address"
-    val email = "businessEmail"
-    val confirmEmail = "confirmedBusinessEmail"
-    val phone = "businessPhone"
-    val isSmallBusiness = "isSmallBusiness"
-    val isAgent = "isAgent"
   }
 
   lazy val form = Form(mapping(
@@ -112,11 +111,17 @@ trait CreateGroupAccount extends PropertyLinkingController {
   implicit def vm(form: Form[_]): CreateGroupAccountVM = CreateGroupAccountVM(form)
 }
 
-
-
-
-
-object CreateGroupAccount extends CreateGroupAccount
+object CreateGroupAccount {
+  val keys = new {
+    val companyName = "companyName"
+    val address = "address"
+    val email = "businessEmail"
+    val confirmEmail = "confirmedBusinessEmail"
+    val phone = "businessPhone"
+    val isSmallBusiness = "isSmallBusiness"
+    val isAgent = "isAgent"
+  }
+}
 
 case class CreateGroupAccountVM(form: Form[_])
 

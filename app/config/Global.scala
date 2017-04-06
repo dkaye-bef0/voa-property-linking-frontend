@@ -21,27 +21,27 @@ import javax.inject.Inject
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
-import play.api.Play.{configuration, current}
+import play.api.Play.current
+import play.api.http.DefaultHttpFilters
 import play.api.i18n.Messages.Implicits._
 import play.api.mvc._
-import play.api.{Application, Configuration, GlobalSettings, Play}
+import play.api.{Application, Configuration, Play}
 import play.twirl.api.Html
 import uk.gov.hmrc.play.audit.filters.FrontendAuditFilter
 import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.config.{AppName, ControllerConfig, ServicesConfig}
+import uk.gov.hmrc.play.config.{AppName, ControllerConfig}
 import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.play.frontend.bootstrap.{DefaultFrontendGlobal, ShowErrorPage}
 import uk.gov.hmrc.play.http.logging.filters.FrontendLoggingFilter
 import uk.gov.hmrc.whitelist.AkamaiWhitelistFilter
-import play.api.http.DefaultHttpFilters
 
 import scala.concurrent.Future
-
+/*
 object Global extends VPLFrontendGlobal {
-  override val wiring: Wiring = new Wiring {
-    override def http = new WSHttp
-  }
+  /*override val wiring: Wiring = new Wiring {
+    override def http = new VPLHttp
+  }*/
 }
 
 trait VPLFrontendGlobal extends DefaultFrontendGlobal with ShowErrorPage {
@@ -58,12 +58,8 @@ trait VPLFrontendGlobal extends DefaultFrontendGlobal with ShowErrorPage {
 
   override def frontendAuditFilter: FrontendAuditFilter = AuditFilter
 
-  val wiring: Wiring
-}
-
-object AuditServiceConnector extends AuditConnector {
-  override lazy val auditingConfig = LoadAuditingConfig("auditing")
-}
+//  val wiring: Wiring
+}*/
 
 object LoggingFilter extends FrontendLoggingFilter with MicroserviceFilterSupport {
   override def controllerNeedsLogging(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsLogging

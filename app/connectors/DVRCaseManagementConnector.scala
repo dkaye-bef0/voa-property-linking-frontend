@@ -23,8 +23,8 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 import scala.concurrent.Future
 
-class DVRCaseManagementConnector(http: HttpPost) extends ServicesConfig {
-  val url = baseUrl("property-linking") + "/property-linking"
+class DVRCaseManagementConnector(http: HttpPost, servicesConfig: ServicesConfig) {
+  val url = servicesConfig.baseUrl("property-linking") + "/property-linking"
 
   def requestDetailedValuation(dvr: DetailedValuationRequest)(implicit hc: HeaderCarrier): Future[Unit] = {
     http.POST[DetailedValuationRequest, HttpResponse](url + "/request-detailed-valuation", dvr) map { _ => () }

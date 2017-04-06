@@ -16,24 +16,26 @@
 
 package controllers
 
-import javax.inject.Inject
-
-import config.Wiring
+import config.ApplicationConfig
 import connectors.fileUpload.FileUploadConnector
+import connectors.propertyLinking.PropertyLinkConnector
 import connectors.{EnvelopeConnector, FileInfo}
 import models._
 import play.api.data.Forms._
 import play.api.data.{Form, FormError}
-import play.api.i18n.Messages
+import play.api.i18n.{Messages, MessagesApi}
+import session.{LinkingSessionRepository, WithLinkingSession}
 
-class UploadRatesBill @Inject()(override val fileUploader: FileUploadConnector, override val envelopeConnector: EnvelopeConnector)
-  extends PropertyLinkingController with FileUploadHelpers {
+class UploadRatesBill(val propertyLinks: PropertyLinkConnector,
+                      val withLinkingSession: WithLinkingSession,
+                      val linkingSession: LinkingSessionRepository,
+                      val fileUploader: FileUploadConnector,
+                      val envelopeConnector: EnvelopeConnector,
+                      val messagesApi: MessagesApi,
+                      val appConfig: ApplicationConfig
+                     ) extends PropertyLinkingController with FileUploadHelpers {
 
   import UploadRatesBill._
-
-  lazy val propertyLinks = Wiring().propertyLinkConnector
-  lazy val withLinkingSession = Wiring().withLinkingSession
-  lazy val linkingSession = Wiring().sessionRepository
 
   def show() = withLinkingSession { implicit request =>
     Ok(views.html.uploadRatesBill.show(UploadRatesBillVM(form)))

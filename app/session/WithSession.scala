@@ -16,13 +16,13 @@
 
 package session
 
-import config.Wiring
+import actions.AuthenticatedAction
 import models.{DetailedIndividualAccount, GroupAccount}
 import play.api.i18n.Messages
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc._
 import uk.gov.hmrc.play.http.HeaderCarrier
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 import scala.concurrent.Future
 
@@ -34,14 +34,8 @@ case class LinkingSessionRequest[A](ses: LinkingSession, organisationId: Int,
 
 case object NoSessionId extends Exception
 
-class WithLinkingSession {
+class WithLinkingSession(session: LinkingSessionRepository, authenticated: AuthenticatedAction) {
   implicit def hc(implicit request: Request[_]) = HeaderCarrier.fromHeadersAndSession(request.headers, Some(request.session))
-  val session = Wiring().sessionRepository
-  val individualAccountConnector = Wiring().individualAccountConnector
-  val groupAccountConnector = Wiring().groupAccountConnector
-  val auth = Wiring().authConnector
-  val ggAction = Wiring().ggAction
-  val authenticated = Wiring().authenticated
 
   def apply(body: LinkingSessionRequest[AnyContent] => Future[Result])(implicit messages: Messages) = authenticated { implicit request =>
     session.get flatMap {

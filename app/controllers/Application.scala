@@ -16,23 +16,23 @@
 
 package controllers
 
-import config.{ApplicationConfig, Wiring}
-import play.api.Play.current
-import play.api.i18n.Messages.Implicits._
+import config.ApplicationConfig
+import connectors.TrafficThrottleConnector
+import play.api.i18n.MessagesApi
 import play.api.mvc._
-import uk.gov.hmrc.play.http.{HeaderCarrier, SessionKeys}
+import uk.gov.hmrc.play.http.SessionKeys
 
-object Application extends Controller with WithThrottling {
-  val ggAction = Wiring().ggAction
-
-  implicit def hc(implicit request: Request[_]): HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers, Some(request.session))
+class Application(val appConfig: ApplicationConfig,
+                  val messagesApi: MessagesApi,
+                  val trafficThrottleConnector: TrafficThrottleConnector
+                 ) extends PropertyLinkingController with WithThrottling {
 
   def typography = Action { implicit request =>
     Ok(views.html.typography())
   }
 
   def releaseNotes = Action { implicit request =>
-    if (ApplicationConfig.showReleaseNotes) {
+    if (appConfig.showReleaseNotes) {
       Ok(views.html.releaseNotes())
     } else {
       Redirect(routes.Application.start())

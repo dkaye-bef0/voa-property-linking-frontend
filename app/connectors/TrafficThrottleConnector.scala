@@ -20,12 +20,12 @@ package connectors
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class TrafficThrottleConnector(http: HttpGet with HttpPost)(implicit ec: ExecutionContext) extends ServicesConfig {
+class TrafficThrottleConnector(http: HttpGet with HttpPost, servicesConfig: ServicesConfig) {
   val trafficRouter = "voa-traffic-throttle"
 
-  lazy val serviceUrl = s"${baseUrl(trafficRouter)}/$trafficRouter"
+  lazy val serviceUrl = s"${servicesConfig.baseUrl(trafficRouter)}/$trafficRouter"
 
   def isThrottled(route: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val url = s"$serviceUrl/cca/$route/throttled"

@@ -17,15 +17,15 @@
 package connectors
 
 import models.{DetailedIndividualAccount, IndividualAccount}
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsDefined, JsNumber, JsValue}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class IndividualAccounts(http: HttpGet with HttpPut with HttpPost)(implicit ec: ExecutionContext)
-  extends ServicesConfig {
-  lazy val baseUrl: String = baseUrl("property-representations") + s"/property-linking/individuals"
+class IndividualAccounts(http: HttpGet with HttpPut with HttpPost, servicesConfig: ServicesConfig) {
+  lazy val baseUrl: String = servicesConfig.baseUrl("property-representations") + s"/property-linking/individuals"
 
   def get(personId: Int)(implicit hc: HeaderCarrier): Future[Option[DetailedIndividualAccount]] = {
     http.GET[Option[DetailedIndividualAccount]](s"$baseUrl/$personId")

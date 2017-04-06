@@ -1,6 +1,6 @@
-@import config.ApplicationConfig._
 @import models.Accounts._
 
+@import config.ApplicationConfig
 @(title: String,
   mainClass: Option[String] = None,
   mainDataAttributes: Option[Html] = None,
@@ -13,7 +13,7 @@
   scriptElem: Option[Html] = None,
   showLogout: Boolean = true,
   topNavigation: Boolean = true,
-  individualId: Option[Int] = None)(implicit request: RequestHeader, messages: Messages)
+  individualId: Option[Int] = None)(implicit request: RequestHeader, messages: Messages, appConfig: ApplicationConfig)
 
 @import layouts.{govuk_template => hmrcGovUkTemplate}
 @import uk.gov.hmrc.play.views.html.{layouts => uiLayouts}
@@ -42,20 +42,20 @@
 @betaBanner = {
     @uiLayouts.betaBanner(
         userLoggedIn = false,
-        betaFeedbackUrl = businessRatesValuationUrl("send-beta-feedback"),
-        betaFeedbackUnauthenticatedUrl = businessRatesValuationUrl("send-beta-feedback"),
+        betaFeedbackUrl = appConfig.businessRatesValuationUrl("send-beta-feedback"),
+        betaFeedbackUnauthenticatedUrl = appConfig.businessRatesValuationUrl("send-beta-feedback"),
         showFeedbackLinkInBetaBanner = true
     )
 }
 
 @analyticsAdditionalJs = {
-    ga('set', '@voaPersonID', '@individualId');
+    ga('set', '@{appConfig.voaPersonID}', '@individualId');
 }
 
 @bodyEnd = {
     @uiLayouts.footer(
-      analyticsToken = Some(analyticsToken),
-      analyticsHost = analyticsHost,
+      analyticsToken = Some(appConfig.analyticsToken),
+      analyticsHost = appConfig.analyticsHost,
       ssoUrl = None,
       scriptElem =  scriptElem,
       gaCalls = None,

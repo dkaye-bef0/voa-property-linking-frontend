@@ -24,9 +24,9 @@ import play.api.libs.json.{JsDefined, JsNumber, JsValue}
 
 import scala.concurrent.Future
 
-class Addresses(http: HttpGet with HttpPost) extends ServicesConfig {
+class Addresses(http: HttpGet with HttpPost, servicesConfig: ServicesConfig) {
 
-  val url = baseUrl("property-linking") + "/property-linking/address"
+  val url = servicesConfig.baseUrl("property-linking") + "/property-linking/address"
 
   def findByPostcode(postcode: String)(implicit hc: HeaderCarrier): Future[Seq[Address]] = {
     http.GET[Seq[Address]](url + s"?postcode=$postcode")

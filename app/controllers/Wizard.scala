@@ -17,63 +17,64 @@
 package controllers
 
 import form.Mappings._
-import play.api.Play.current
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.Messages.Implicits._
+import play.api.i18n.MessagesApi
 import play.api.mvc._
 import uk.gov.voa.play.form.ConditionalMappings._
 
 
-object Wizard extends Controller {
+class Wizard(val messagesApi: MessagesApi) extends PropertyLinkingController {
+
+  import Wizard._
 
   def authenticationWizard() = Action { implicit request =>
     Ok(views.html.authenticationWizard.authenticationWizard(wizardForm))
   }
 
   def submit() = Action { implicit request =>
-      wizardForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.authenticationWizard.authenticationWizard(errors)),
-          data => redirectToStart(data)
-      )
+    wizardForm.bindFromRequest.fold(
+      errors => BadRequest(views.html.authenticationWizard.authenticationWizard(errors)),
+      data => redirectToStart(data)
+    )
   }
 
   private def redirectToStart(options: WizardOptions) = options match {
-      case WizardOptions(true, Some(true), _) => Redirect(routes.Wizard.beforeYouRegisterA)
-      case WizardOptions(true, Some(false), _) => Redirect(routes.Wizard.beforeYouRegisterB)
-      case WizardOptions(false, _, Some(true)) => Redirect(routes.Wizard.registerExistingGG)
-      case WizardOptions(false, _, Some(false)) => Redirect(routes.Wizard.beforeYouRegisterD)
+    case WizardOptions(true, Some(true), _) => Redirect(routes.Wizard.beforeYouRegisterA)
+    case WizardOptions(true, Some(false), _) => Redirect(routes.Wizard.beforeYouRegisterB)
+    case WizardOptions(false, _, Some(true)) => Redirect(routes.Wizard.registerExistingGG)
+    case WizardOptions(false, _, Some(false)) => Redirect(routes.Wizard.beforeYouRegisterD)
   }
 
   def beforeYouRegisterA() = Action { implicit request =>
-      Ok(views.html.authenticationWizard.beforeYouRegisterA())
+    Ok(views.html.authenticationWizard.beforeYouRegisterA())
   }
 
   def beforeYouRegisterB() = Action { implicit request =>
-      Ok(views.html.authenticationWizard.beforeYouRegisterB())
+    Ok(views.html.authenticationWizard.beforeYouRegisterB())
   }
 
   def registerExistingGG() = Action { implicit request =>
-      Ok(views.html.authenticationWizard.registerExistingGG(useExistingAccountForm))
+    Ok(views.html.authenticationWizard.registerExistingGG(useExistingAccountForm))
   }
 
   def beforeYouRegisterC() = Action { implicit request =>
-      Ok(views.html.authenticationWizard.beforeYouRegisterC())
+    Ok(views.html.authenticationWizard.beforeYouRegisterC())
   }
 
   def beforeYouRegisterD() = Action { implicit request =>
-      Ok(views.html.authenticationWizard.beforeYouRegisterD())
+    Ok(views.html.authenticationWizard.beforeYouRegisterD())
   }
 
   def submitExistingGG() = Action { implicit request =>
-      useExistingAccountForm.bindFromRequest.fold(
-          errors => BadRequest(views.html.authenticationWizard.registerExistingGG(errors)),
-          useExisting => if (useExisting) {
-              Redirect(routes.Wizard.beforeYouRegisterC)
-          } else {
-              Redirect(routes.Wizard.beforeYouRegisterD)
-          }
-      )
+    useExistingAccountForm.bindFromRequest.fold(
+      errors => BadRequest(views.html.authenticationWizard.registerExistingGG(errors)),
+      useExisting => if (useExisting) {
+        Redirect(routes.Wizard.beforeYouRegisterC)
+      } else {
+        Redirect(routes.Wizard.beforeYouRegisterD)
+      }
+    )
   }
 
   lazy val wizardForm = Form(mapping(
@@ -82,14 +83,16 @@ object Wizard extends Controller {
     keys.existingGGAccount -> mandatoryIfFalse(keys.businessHasRegistered, mandatoryBoolean)
   )(WizardOptions.apply)(WizardOptions.unapply))
 
-  lazy val keys = new {
-      val businessHasRegistered = "businessHasRegistered"
-      val givenGGDetails = "givenGGDetails"
-      val existingGGAccount = "existingGGAccount"
-      val useExistingGGAccount = "useExistingGGAccount"
-  }
-
   lazy val useExistingAccountForm = Form(single(keys.useExistingGGAccount -> mandatoryBoolean))
+}
+
+object Wizard {
+  val keys = new {
+    val businessHasRegistered = "businessHasRegistered"
+    val givenGGDetails = "givenGGDetails"
+    val existingGGAccount = "existingGGAccount"
+    val useExistingGGAccount = "useExistingGGAccount"
+  }
 }
 
 case class WizardOptions(businessHasRegistered: Boolean, givenGGDetails: Option[Boolean], existingGGAccount: Option[Boolean])

@@ -30,6 +30,8 @@ private object AppDependencies {
   import play.sbt.PlayImport._
   import play.core.PlayVersion
 
+  private val macwireVersion = "2.3.0"
+
   val compile = Seq(
     filters,
     ws,
@@ -40,13 +42,17 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "govuk-template" % "5.0.0",
     "uk.gov.hmrc" %% "http-caching-client" % "6.0.0",
     "uk.gov.hmrc" %% "play-authorised-frontend" % "6.1.0",
-    "uk.gov.hmrc" %% "play-config" % "3.0.0",
+    "uk.gov.hmrc" %% "play-config" % "4.3.0",
     "uk.gov.hmrc" %% "play-health" % "2.0.0",
     "uk.gov.hmrc" %% "play-json-logger" % "3.0.0",
     "uk.gov.hmrc" %% "play-ui" % "7.0.0",
     "org.typelevel" %% "cats-core" % "0.8.1",
     "uk.gov.hmrc" %% "play-conditional-form-mapping" % "0.2.0",
-    "uk.gov.hmrc" %% "play-whitelist-filter" % "2.0.0"
+    "uk.gov.hmrc" %% "play-whitelist-filter" % "2.0.0",
+    "com.softwaremill.macwire" %% "macros" % macwireVersion % "provided",
+    "com.softwaremill.macwire" %% "macrosakka" % macwireVersion % "provided",
+    "com.softwaremill.macwire" %% "util" % macwireVersion,
+    "com.softwaremill.macwire" %% "proxy" % macwireVersion
   )
 
   trait TestDependencies {

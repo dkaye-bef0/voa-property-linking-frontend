@@ -16,9 +16,10 @@
 
 package controllers
 
-import actions.BasicAuthenticatedRequest
-import config.{ApplicationConfig, Global, Wiring}
-import connectors.UpdatedRepresentation
+import actions.{AuthenticatedAction, BasicAuthenticatedRequest}
+import config.{ApplicationConfig, Global}
+import connectors.propertyLinking.PropertyLinkConnector
+import connectors.{GroupAccounts, PropertyRepresentationConnector, UpdatedRepresentation}
 import form.EnumMapping
 import form.Mappings._
 import models._
@@ -26,21 +27,25 @@ import org.joda.time.DateTime
 import play.api.data.Forms._
 import play.api.data.validation.Constraint
 import play.api.data.{Form, FormError, Mapping}
+import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc.Request
+import session.AgentAppointmentSessionRepository
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-class AppointAgentController extends PropertyLinkingController {
-  val representations = Wiring().propertyRepresentationConnector
-  val accounts = Wiring().groupAccountConnector
-  val propertyLinks = Wiring().propertyLinkConnector
-  val authenticated = Wiring().authenticated
-  val sessionRepository = Wiring().agentAppointmentSessionRepository
+class AppointAgentController(representations: PropertyRepresentationConnector,
+                             accounts: GroupAccounts,
+                             propertyLinks: PropertyLinkConnector,
+                             authenticated: AuthenticatedAction,
+                             sessionRepository: AgentAppointmentSessionRepository,
+                             val appConfig: ApplicationConfig,
+                             val messagesApi: MessagesApi
+                            ) extends PropertyLinkingController {
 
   def appoint(linkId: Long) = authenticated { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       sessionRepository.get flatMap {
         case Some(s) =>
           Ok(views.html.propertyRepresentation.appointAgent(AppointAgentVM(appointAgentForm.fill(s.agent), linkId)))
@@ -53,7 +58,7 @@ class AppointAgentController extends PropertyLinkingController {
   }
 
   def edit(linkId: Long) = authenticated { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       representations.find(linkId).map(reprs => {
         if (reprs.size > 1)
           Ok(views.html.propertyRepresentation.selectAgent(reprs))
@@ -68,7 +73,7 @@ class AppointAgentController extends PropertyLinkingController {
   }
 
   def select(linkId: Long) = authenticated { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       representations.find(linkId).map(reprs => {
         Ok(views.html.propertyRepresentation.selectAgent(reprs))
       })
@@ -78,7 +83,7 @@ class AppointAgentController extends PropertyLinkingController {
   }
 
   def revokeAgent(agentCode: Long, authorisedPartyId: Long) = authenticated { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       for {
         links <- propertyLinks.linkedProperties(request.organisationId)
         agents = links.flatMap(_.agents)
@@ -97,7 +102,7 @@ class AppointAgentController extends PropertyLinkingController {
   }
 
   def revokeAgentConfirmed(agentCode: Long, authorisedPartyId: Long) = authenticated { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       for {
         links <- propertyLinks.linkedProperties(request.organisationId)
         agents = links.flatMap(_.agents)
@@ -110,7 +115,7 @@ class AppointAgentController extends PropertyLinkingController {
             val nextUrl = controllers.routes.Dashboard.viewManagedProperties(agentCode).url
             Ok(views.html.propertyRepresentation.revokedAgent(nextUrl, agents.head.organisationName, address))
           }
-          else{
+          else {
             val nextUrl = controllers.routes.Dashboard.manageAgents().url
             Ok(views.html.propertyRepresentation.revokedAgent(nextUrl, agents.head.organisationName, address))
           }
@@ -124,7 +129,7 @@ class AppointAgentController extends PropertyLinkingController {
   }
 
   def appointSubmit(authorisationId: Long) = authenticated { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       appointAgentForm.bindFromRequest().fold(errors => {
         BadRequest(views.html.propertyRepresentation.appointAgent(AppointAgentVM(errors, authorisationId)))
       }, agent => {
@@ -160,15 +165,15 @@ class AppointAgentController extends PropertyLinkingController {
   }
 
   private def appointAgent(authorisationId: Long, agent: AppointAgent,
-                   agentOrgId: Long, pLink: PropertyLink)(implicit request: BasicAuthenticatedRequest[_]) = {
+                           agentOrgId: Long, pLink: PropertyLink)(implicit request: BasicAuthenticatedRequest[_]) = {
     val hasCheckAgent = pLink.agents.map(_.checkPermission).contains(StartAndContinue)
     val hasChallengeAgent = pLink.agents.map(_.challengePermission).contains(StartAndContinue)
     if (hasCheckAgent && agent.canCheck == StartAndContinue || hasChallengeAgent && agent.canChallenge == StartAndContinue) {
       sessionRepository.start(agent, agentOrgId, pLink).map(_ => {
         val permissions = pLink.agents.map(a => ExistingAgentsPermission(a.organisationName, a.agentCode,
-                        Seq(
-                          if (a.checkPermission == StartAndContinue) "check" else "",
-                          if (a.challengePermission == StartAndContinue) "challenge" else "").filter(_.nonEmpty)
+          Seq(
+            if (a.checkPermission == StartAndContinue) "check" else "",
+            if (a.challengePermission == StartAndContinue) "challenge" else "").filter(_.nonEmpty)
         ))
         val newAgentPerms = ExistingAgentsPermission("", agent.agentCode,
           Seq(
@@ -195,16 +200,16 @@ class AppointAgentController extends PropertyLinkingController {
   }
 
   private def updateAllAgentsPermission(authorisationId: Long, link: PropertyLink, newAgentPermission: AppointAgent,
-                                newAgentOrgId: Long, individualId: Long)(implicit hc: HeaderCarrier): Future[Unit] = {
+                                        newAgentOrgId: Long, individualId: Long)(implicit hc: HeaderCarrier): Future[Unit] = {
     val updateExistingAgents = if (newAgentPermission.canCheck == StartAndContinue && newAgentPermission.canChallenge == StartAndContinue) {
-      Future.sequence(link.agents.map( agent =>  representations.revoke(agent.authorisedPartyId)) )
+      Future.sequence(link.agents.map(agent => representations.revoke(agent.authorisedPartyId)))
     } else if (newAgentPermission.canCheck == StartAndContinue) {
       val agentsToUpdate = link.agents.filter(_.checkPermission == StartAndContinue)
       for {
         revokedAgents <- Future.traverse(agentsToUpdate)(agent => representations.revoke(agent.authorisedPartyId))
         //existing agents that had a check permission have been revoked
         //we now need to re-add the agents that had a challenge permission
-        updatedAgents <- Future.traverse(agentsToUpdate.filter(_.challengePermission != NotPermitted))( agent => {
+        updatedAgents <- Future.traverse(agentsToUpdate.filter(_.challengePermission != NotPermitted))(agent => {
           createAndSubmitAgentRepRequest(authorisationId, agent.organisationId, individualId, NotPermitted, agent.challengePermission)
         })
       } yield {
@@ -221,29 +226,30 @@ class AppointAgentController extends PropertyLinkingController {
         updatedAgents
       }
     }
-    updateExistingAgents.flatMap( _ => {
+    updateExistingAgents.flatMap(_ => {
       //existing agents have been updated. Time to add the new agent.
       createAndSubmitAgentRepRequest(authorisationId, newAgentOrgId, individualId, newAgentPermission)
     })
   }
 
   private def createAndSubmitAgentRepRequest(authorisationId: Long, agentOrgId: Long, userIndividualId: Long,
-                                           checkPermission: AgentPermission, challengePermission: AgentPermission)(implicit hc: HeaderCarrier): Future[Unit] = {
+                                             checkPermission: AgentPermission, challengePermission: AgentPermission)(implicit hc: HeaderCarrier): Future[Unit] = {
     val req = RepresentationRequest(authorisationId, agentOrgId, userIndividualId,
       java.util.UUID.randomUUID().toString, checkPermission.name, challengePermission.name, new DateTime())
     representations.create(req)
   }
+
   private def createAndSubmitAgentRepRequest(authorisationId: Long, agentOrgId: Long, userIndividualId: Long, appointedAgent: AppointAgent)
-                                    (implicit hc: HeaderCarrier): Future[Unit] = {
+                                            (implicit hc: HeaderCarrier): Future[Unit] = {
     createAndSubmitAgentRepRequest(authorisationId, agentOrgId, userIndividualId, appointedAgent.canCheck, appointedAgent.canChallenge)
   }
 
   def confirmed(authorisationId: Long) = authenticated { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       sessionRepository.get flatMap {
         case Some(s) => {
           updateAllAgentsPermission(authorisationId, s.propertyLink, s.agent, s.agentOrgId, request.individualAccount.individualId)
-            .map(_=> sessionRepository.remove())
+            .map(_ => sessionRepository.remove())
             .map(_ => Ok(views.html.propertyRepresentation.appointedAgent(s.propertyLink.address)))
         }
         case None => NotFound(Global.notFoundTemplate)
@@ -254,8 +260,8 @@ class AppointAgentController extends PropertyLinkingController {
   }
 
   def declined(authorisationId: Long) = authenticated { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
-      sessionRepository.remove().map( _ => Redirect(controllers.routes.Dashboard.manageProperties()))
+    if (appConfig.agentEnabled) {
+      sessionRepository.remove().map(_ => Redirect(controllers.routes.Dashboard.manageProperties()))
     } else {
       NotFound(Global.notFoundTemplate)
     }
@@ -270,7 +276,7 @@ class AppointAgentController extends PropertyLinkingController {
   }
 
   def modify(representationId: Long) = authenticated { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       representations.get(representationId) map {
         case Some(rep) =>
           val form = appointAgentForm.fill(AppointAgent(/*FIXME*/ 123, rep.checkPermission, rep.challengePermission))
@@ -294,14 +300,13 @@ class AppointAgentController extends PropertyLinkingController {
 
   def appointAgentForm(implicit request: BasicAuthenticatedRequest[_]) = Form(mapping(
     "agentCode" -> longNumeric.verifying("error.selfAppointment", _ != request.organisationAccount.agentCode),
-    "canCheck" ->  AgentPermissionMapping("canChallenge"),
+    "canCheck" -> AgentPermissionMapping("canChallenge"),
     "canChallenge" -> AgentPermissionMapping("canCheck")
   )(AppointAgent.apply)(AppointAgent.unapply))
 }
 
-object AppointAgentController extends AppointAgentController
-
 case class AppointAgent(agentCode: Long, canCheck: AgentPermission, canChallenge: AgentPermission)
+
 object AppointAgent {
   implicit val format = Json.format[AppointAgent]
 }
@@ -311,6 +316,7 @@ case class AppointAgentVM(form: Form[_], linkId: Long)
 case class ModifyAgentVM(form: Form[_], representationId: Long)
 
 case class ExistingAgentsPermission(agentName: String, agentCode: Long, availablePermission: Seq[String])
+
 case class ConfirmOverrideVM(authorisationId: Long, newAgent: ExistingAgentsPermission, existingPermissions: Seq[ExistingAgentsPermission])
 
 case class SelectAgentVM(reps: Seq[PropertyRepresentation], linkId: Long)
@@ -332,7 +338,7 @@ case class AgentPermissionMapping(other: String, key: String = "", constraints: 
   }
 
   override def unbindAndValidate(value: AgentPermission) = {
-      wrapped.withPrefix(key).unbindAndValidate(value)
+    wrapped.withPrefix(key).unbindAndValidate(value)
   }
 
   override def withPrefix(prefix: String) = copy(key = prefix + key)

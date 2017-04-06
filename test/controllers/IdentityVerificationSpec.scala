@@ -31,7 +31,7 @@ class IdentityVerificationSpec extends ControllerSpec {
     override val groups = StubGroupAccountConnector
     override val auth = StubAuthConnector
     override val ggAction = StubGGAction
-    override val identityVerification = StubIdentityVerification
+    override val identityVerification = StubIdentityVerificationConnector
     override val keystore = StubKeystore
     override val addresses = StubAddresses
   }
@@ -44,7 +44,7 @@ class IdentityVerificationSpec extends ControllerSpec {
     "display the successful iv confirmation page, and not create an individual account" in {
     StubAuthConnector.stubExternalId("externalId")
     StubAuthConnector.stubGroupId("groupwithoutaccount")
-    StubIdentityVerification.stubSuccessfulJourney("successfuljourney")
+    StubIdentityVerificationConnector.stubSuccessfulJourney("successfuljourney")
 
     val res = TestIdentityVerification.success()(requestWithJourneyId("successfuljourney"))
     status(res) mustBe OK
@@ -64,7 +64,7 @@ class IdentityVerificationSpec extends ControllerSpec {
     StubAuthConnector.stubGroupId("groupwithaccount")
     val groupAccount = arbitrary[GroupAccount].sample.get
     StubGroupAccountConnector.stubAccount(groupAccount.copy(groupId = "groupwithaccount"))
-    StubIdentityVerification.stubSuccessfulJourney("anothersuccess")
+    StubIdentityVerificationConnector.stubSuccessfulJourney("anothersuccess")
 
     val res = TestIdentityVerification.success()(requestWithJourneyId("anothersuccess"))
     status(res) mustBe OK
@@ -79,7 +79,7 @@ class IdentityVerificationSpec extends ControllerSpec {
   }
 
   "Manually navigating to the iv success page after failing identity verification" must "return a 401 Unauthorised response" in {
-    StubIdentityVerification.stubFailedJourney("somejourneyid")
+    StubIdentityVerificationConnector.stubFailedJourney("somejourneyid")
 
     val res = TestIdentityVerification.success()(request.withSession("journey-id" -> "somejourneyid"))
     status(res) mustBe UNAUTHORIZED

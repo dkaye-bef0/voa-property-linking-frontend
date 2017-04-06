@@ -16,17 +16,18 @@
 
 package controllers
 
+import config.ApplicationConfig
+import play.api.i18n.I18nSupport
 import play.api.mvc.{Controller, Request}
 import uk.gov.hmrc.play.http.HeaderCarrier
-import play.api.Play.current
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait PropertyLinkingController extends Controller {
-
-  implicit lazy val messages = play.api.i18n.Messages.Implicits.applicationMessages
-
+trait PropertyLinkingController extends Controller with I18nSupport {
   implicit def hc(implicit request: Request[_]): HeaderCarrier = HeaderCarrier.fromHeadersAndSession(request.headers, Some(request.session))
   implicit def future[A](a: A): Future[A] = Future.successful(a)
   implicit val ec: ExecutionContext = play.api.libs.concurrent.Execution.Implicits.defaultContext
+
+  val appConfig: ApplicationConfig
+  implicit val config = appConfig
 }

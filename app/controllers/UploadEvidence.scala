@@ -16,22 +16,26 @@
 
 package controllers
 
-import javax.inject.Inject
-
-import config.Wiring
+import config.ApplicationConfig
 import connectors.fileUpload.FileUploadConnector
+import connectors.propertyLinking.PropertyLinkConnector
 import connectors.{EnvelopeConnector, FileInfo}
 import form.EnumMapping
 import models._
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.i18n.MessagesApi
+import session.{LinkingSessionRepository, WithLinkingSession}
 import views.helpers.Errors
 
-class UploadEvidence @Inject()(override val fileUploader: FileUploadConnector, override val envelopeConnector: EnvelopeConnector)
-  extends PropertyLinkingController with FileUploadHelpers {
-  override val propertyLinks = Wiring().propertyLinkConnector
-  override val withLinkingSession = Wiring().withLinkingSession
-  override val linkingSession = Wiring().sessionRepository
+class UploadEvidence(val propertyLinks: PropertyLinkConnector,
+                     val withLinkingSession: WithLinkingSession,
+                     val linkingSession: LinkingSessionRepository,
+                     val fileUploader: FileUploadConnector,
+                     val envelopeConnector: EnvelopeConnector,
+                     val messagesApi: MessagesApi,
+                     val appConfig: ApplicationConfig
+                    ) extends PropertyLinkingController with FileUploadHelpers {
 
   def show() = withLinkingSession { implicit request =>
     Ok(views.html.uploadEvidence.show(UploadEvidenceVM(UploadEvidence.form)))

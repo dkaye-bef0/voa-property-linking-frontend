@@ -17,12 +17,13 @@
 package controllers
 
 import config.ApplicationConfig
+import play.api.i18n.MessagesApi
 import play.api.mvc.Action
 
-object Login extends PropertyLinkingController {
+class Login(val appConfig: ApplicationConfig, val messagesApi: MessagesApi) extends PropertyLinkingController {
   def show = Action { implicit request =>
-    Redirect(ApplicationConfig.ggSignInUrl, Map(
-      "origin" -> Seq("voa"), "accountType" -> Seq("organisation"), "continue" -> Seq(ApplicationConfig.ggContinueUrl))
+    Redirect(appConfig.ggSignInUrl, Map(
+      "origin" -> Seq("voa"), "accountType" -> Seq("organisation"), "continue" -> Seq(appConfig.ggContinueUrl))
     )
   }
 }

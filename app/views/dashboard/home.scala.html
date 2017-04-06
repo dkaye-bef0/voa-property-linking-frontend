@@ -1,7 +1,7 @@
 @import config.ApplicationConfig
 @import actions.AuthenticatedRequest
 
-@(individualDetails: IndividualDetails, groupAccount:GroupAccount)(implicit request: AuthenticatedRequest[_], messages: Messages)
+@(individualDetails: IndividualDetails, groupAccount: GroupAccount)(implicit request: AuthenticatedRequest[_], messages: Messages, appConfig: ApplicationConfig)
 
 @main_template(
     title = Messages("dashboard.home.title"),
@@ -26,7 +26,7 @@
     <div class="grid-row">
         <div class="column-two-thirds">
 
-            @if(ApplicationConfig.agentEnabled) {
+            @if(appConfig.agentEnabled) {
                 <h2 class="heading-large heading-with-rule">@Messages("dashboard.home.properties")</h2>
             }
 
@@ -38,7 +38,7 @@
                 @Messages("dashboard.home.manageProperties.text")
             </p>
 
-            @if(ApplicationConfig.propertyLinkingEnabled) {
+            @if(appConfig.propertyLinkingEnabled) {
                 <h3 class="heading-medium">
                     <a href="@routes.ClaimProperty.show">@Messages("dashboard.home.searchProperties.link")</a>
                 </h3>
@@ -46,7 +46,7 @@
                 @Messages("dashboard.home.searchProperties.text")
                 </p>
             }
-            @if(ApplicationConfig.casesEnabled) {
+            @if(appConfig.casesEnabled) {
                 <h2 class="heading-large heading-with-rule">@Messages("dashboard.home.cases")</h2>
                 <h3 class="heading-medium"> @Messages("dashboard.home.draft.cases") </h3>
                 <p>
@@ -55,7 +55,7 @@
             }
         </div>
         <div class="column-one-third">
-            @if(ApplicationConfig.agentEnabled) {
+            @if(appConfig.agentEnabled) {
                 <h2 class="heading-large heading-with-rule">@Messages("dashboard.home.management")</h2>
                 <h3 class="heading-medium">
                     <a id="manageAgents" href="@controllers.routes.Dashboard.manageAgents">@Messages("dashboard.home.manageAgents.link")</a>
@@ -65,7 +65,7 @@
                 @Messages("dashboard.home.manageAgents.text")
                 </p>
             }
-            @if(ApplicationConfig.agentEnabled){
+            @if(appConfig.agentEnabled){
                 @if(groupAccount.isAgent) {
                     <h3 class="heading-medium">
                         <a href="@controllers.agent.routes.RepresentationController.manageRepresentationRequest">

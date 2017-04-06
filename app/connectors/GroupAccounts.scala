@@ -18,15 +18,16 @@ package connectors
 
 import controllers.GroupAccountDetails
 import models.{GroupAccount, GroupAccountSubmission}
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsDefined, JsNumber, JsValue}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class GroupAccounts(http: HttpGet with HttpPost)(implicit ec: ExecutionContext) extends ServicesConfig {
+class GroupAccounts(http: HttpGet with HttpPost, servicesConfig: ServicesConfig) {
 
-  lazy val url = baseUrl("property-representations") + "/property-linking/groups"
+  lazy val url = servicesConfig.baseUrl("property-representations") + "/property-linking/groups"
 
   def get(organisationId: Int)(implicit hc: HeaderCarrier): Future[Option[GroupAccount]] = {
     http.GET[Option[GroupAccount]](s"$url/$organisationId")

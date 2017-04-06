@@ -16,16 +16,16 @@
 
 package controllers
 
-import config.{ApplicationConfig, Wiring}
+import auth.GGAction
+import config.ApplicationConfig
+import play.api.i18n.MessagesApi
 import play.api.mvc.Action
-import uk.gov.hmrc.play.config.ServicesConfig
 
-object Register extends PropertyLinkingController with ServicesConfig {
-  val ggAction = Wiring().ggAction
+class Register(ggAction: GGAction, val appConfig: ApplicationConfig, val messagesApi: MessagesApi) extends PropertyLinkingController {
 
   def show = Action { implicit request =>
     Redirect(
-      ApplicationConfig.ggRegistrationUrl,
+      appConfig.ggRegistrationUrl,
       Map("accountType" -> Seq("organisation"), "continue" -> Seq(routes.Register.confirm.url), "origin" -> Seq("voa"))
     )
   }

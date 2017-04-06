@@ -58,7 +58,7 @@ trait DateMappings {
     .transform({ case (d, m, y) => new LocalDate(y, m, d) }, d => (d.getDayOfMonth, d.getMonthOfYear, d.getYear))
 
   def dmyDateAfterThreshold: Mapping[LocalDate] = dmyDate.verifying(Errors.dateMustBeAfter1stApril2017,
-    d => d.isAfter(ApplicationConfig.propertyLinkingDateThreshold))
+    d => d.isAfter(new LocalDate(2017, 4, 1)))
 
   def dmyPastDate: Mapping[LocalDate] = dmyDate.verifying(Errors.dateMustBeInPast, d => d.isBefore(LocalDate.now))
 

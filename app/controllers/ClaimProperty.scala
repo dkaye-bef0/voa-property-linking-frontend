@@ -16,40 +16,39 @@
 
 package controllers
 
-import javax.inject.Inject
-
-import actions.AuthenticatedRequest
-import com.google.inject.Singleton
-import config.{ApplicationConfig, Wiring}
-import connectors.CapacityDeclaration
+import actions.{AuthenticatedAction, AuthenticatedRequest}
+import config.ApplicationConfig
 import connectors.fileUpload.{EnvelopeMetadata, FileUploadConnector}
+import connectors.{CapacityDeclaration, SubmissionIdConnector}
 import form.Mappings._
 import form.{ConditionalDateAfter, EnumMapping}
 import models._
 import org.joda.time.LocalDate
 import play.api.data.Form
 import play.api.data.Forms._
-import session.LinkingSession
+import play.api.i18n.MessagesApi
+import session.{LinkingSession, LinkingSessionRepository}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.voa.play.form.ConditionalMappings._
 import views.helpers.Errors
 
-@Singleton
-class ClaimProperty @Inject()(val fileUploadConnector: FileUploadConnector) extends PropertyLinkingController with ServicesConfig {
-  lazy val sessionRepository = Wiring().sessionRepository
-  lazy val authenticated = Wiring().authenticated
-  lazy val submissionIdConnector = Wiring().submissionIdConnector
+class ClaimProperty(sessionRepository: LinkingSessionRepository,
+                    authenticated: AuthenticatedAction,
+                    submissionIdConnector: SubmissionIdConnector,
+                    val appConfig: ApplicationConfig,
+                    val fileUploadConnector: FileUploadConnector,
+                    val messagesApi: MessagesApi) extends PropertyLinkingController with ServicesConfig {
 
   def show() = authenticated { implicit request =>
-    Redirect(s"${ApplicationConfig.vmvUrl}/cca/search")
+    Redirect(s"${appConfig.vmvUrl}/cca/search")
   }
 
   def declareCapacity(uarn: Long, address: String) = authenticated { implicit request =>
-    Ok(views.html.declareCapacity(DeclareCapacityVM(ClaimProperty.declareCapacityForm, address, uarn)))
+    Ok(views.html.declareCapacity(DeclareCapacityVM(declareCapacityForm, address, uarn)))
   }
 
   def attemptLink(uarn: Long, address: String) = authenticated { implicit request =>
-    ClaimProperty.declareCapacityForm.bindFromRequest().fold(
+    declareCapacityForm.bindFromRequest().fold(
       errors => BadRequest(views.html.declareCapacity(DeclareCapacityVM(errors, address, uarn))),
       formData => initialiseSession(formData, uarn, address) map { _ =>
         Redirect(routes.ChooseEvidence.show())
@@ -65,9 +64,6 @@ class ClaimProperty @Inject()(val fileUploadConnector: FileUploadConnector) exte
     } yield ()
   }
 
-}
-
-object ClaimProperty {
   lazy val declareCapacityForm = Form(mapping(
     "capacity" -> EnumMapping(CapacityType),
     "interestedBefore2017" -> mandatoryBoolean,
@@ -75,7 +71,7 @@ object ClaimProperty {
     "stillInterested" -> mandatoryBoolean,
     "toDate" -> mandatoryIfFalse("stillInterested", ConditionalDateAfter("interestedBefore2017", "fromDate")
       .verifying(Errors.dateMustBeInPast, d => !d.isAfter(LocalDate.now))
-      .verifying(Errors.dateMustBeAfter1stApril2017, d => d.isAfter(ApplicationConfig.propertyLinkingDateThreshold)))
+      .verifying(Errors.dateMustBeAfter1stApril2017, d => d.isAfter(appConfig.propertyLinkingDateThreshold)))
   )(CapacityDeclaration.apply)(CapacityDeclaration.unapply))
 }
 

@@ -34,7 +34,7 @@ import uk.gov.hmrc.play.http.ws._
 import scala.concurrent.Future
 import scala.util.Try
 
-object Wiring {
+/*object Wiring {
   def apply() = play.api.Play.current.global.asInstanceOf[VPLFrontendGlobal].wiring
 }
 
@@ -50,7 +50,7 @@ abstract class Wiring {
   def authConnector = new VPLAuthConnector(http)
   def ggAction = new GGAction(authConnector)
   def withLinkingSession = new WithLinkingSession
-  def identityVerification = new IdentityVerification(http)
+  def identityVerification = new IdentityVerificationConnector(http)
   def addresses = new Addresses(http)
   def businessRatesAuthentication = new BusinessRatesAuthorisation(http)
   def authenticated = new AuthenticatedAction
@@ -59,7 +59,7 @@ abstract class Wiring {
   def dvrCaseManagement = new DVRCaseManagementConnector(http)
   def businessRatesValuation = new BusinessRatesValuationConnector(http)
   def trafficThrottleConnector = new TrafficThrottleConnector(http)
-}
+}*/
 
 class VPLSessionCache(val http: HttpGet with HttpPut with HttpDelete) extends SessionCache with AppName with ServicesConfig {
   override def defaultSource: String = appName
@@ -78,7 +78,7 @@ class VPLSessionCache(val http: HttpGet with HttpPut with HttpDelete) extends Se
 }
 
 
-class WSHttp extends WSGet with WSPut with WSDelete with WSPost with WSPatch with HttpAuditing with AppName with RunMode {
+class VPLHttp extends WSHttp with HttpAuditing with AppName {
   override val hooks = Seq(AuditingHook)
   override def auditConnector = AuditServiceConnector
 

@@ -16,14 +16,12 @@
 
 package controllers
 
-import config.Wiring
-import play.api.i18n.Messages
+import connectors.Addresses
+import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc.Action
 
-trait AddressLookup extends PropertyLinkingController {
-
-  val addresses = Wiring().addresses
+class AddressLookup(addresses: Addresses, val messagesApi: MessagesApi) extends PropertyLinkingController {
 
   def findByPostcode(postcode: String) = Action.async { implicit request =>
       addresses.findByPostcode(postcode.trim) map { res =>
@@ -37,5 +35,3 @@ trait AddressLookup extends PropertyLinkingController {
     }
   }
 }
-
-object AddressLookup extends AddressLookup

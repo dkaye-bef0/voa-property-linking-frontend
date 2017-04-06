@@ -1,5 +1,5 @@
-@(title: String, heading: String, message: String)(implicit request: RequestHeader, messages: Messages)
-
+@import config.ApplicationConfig
+@(title: String, heading: String, message: String)(implicit request: RequestHeader, messages: Messages, appConfig: ApplicationConfig)
 
     @main_template(title = title, topNavigation = false) {
 

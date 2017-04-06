@@ -16,12 +16,12 @@
 
 package utils
 
-import connectors.IdentityVerification
+import connectors.IdentityVerificationConnector
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-object StubIdentityVerification extends IdentityVerification(StubHttp) {
+object StubIdentityVerificationConnector extends IdentityVerificationConnector(StubHttp) {
 
   private var journeyResult = ("", "")
 

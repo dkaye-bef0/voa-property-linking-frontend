@@ -22,10 +22,10 @@ import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AuthorisationConnector(http: HttpGet with HttpPost) extends ServicesConfig {
+class AuthorisationConnector(http: HttpGet with HttpPost, servicesConfig: ServicesConfig){
 
   def canViewAssessment(linkId: String, assessmentRef: Int)(implicit hc: HeaderCarrier): Future[Int] = {
-    val url = baseUrl("authorisation") + s"/business-rates-authorisation/property-link/$linkId/assessment/$assessmentRef"
+    val url = servicesConfig.baseUrl("authorisation") + s"/business-rates-authorisation/property-link/$linkId/assessment/$assessmentRef"
     http.GET[HttpResponse](url).map(_.status)
   }
 

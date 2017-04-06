@@ -16,14 +16,13 @@
 
 package controllers
 
-import config.Wiring
+import form.Mappings._
 import play.api.data.Form
 import play.api.data.Forms._
-import form.Mappings._
+import play.api.i18n.MessagesApi
+import session.WithLinkingSession
 
-trait ChooseEvidence extends PropertyLinkingController {
-
-  val withLinkingSession = Wiring().withLinkingSession
+class ChooseEvidence(withLinkingSession: WithLinkingSession, val messagesApi: MessagesApi) extends PropertyLinkingController {
 
   def show = withLinkingSession { implicit request =>
     Ok(views.html.uploadRatesBill.chooseEvidence(form))
@@ -39,11 +38,11 @@ trait ChooseEvidence extends PropertyLinkingController {
     )
   }
 
-  lazy val form = Form(single(keys.hasRatesBill -> mandatoryBoolean))
+  lazy val form = Form(single(ChooseEvidence.keys.hasRatesBill -> mandatoryBoolean))
+}
 
-  lazy val keys = new {
+object ChooseEvidence {
+  val keys = new {
     val hasRatesBill = "hasRatesBill"
   }
 }
-
-object ChooseEvidence extends ChooseEvidence

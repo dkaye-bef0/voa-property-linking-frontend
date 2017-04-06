@@ -16,22 +16,27 @@
 
 package controllers.agent
 
+import actions.AuthenticatedAction
 import cats.data.OptionT
 import cats.instances.future._
-import config.{ApplicationConfig, Global, Wiring}
+import config.{ApplicationConfig, Global}
+import connectors.PropertyRepresentationConnector
+import connectors.propertyLinking.PropertyLinkConnector
 import controllers.PropertyLinkingController
-import controllers.agent.RepresentationController.ManagePropertiesVM
 import models._
+import play.api.i18n.MessagesApi
 
 import scala.concurrent.Future
 
-trait RepresentationController extends PropertyLinkingController {
-  val reprConnector = Wiring().propertyRepresentationConnector
-  val authenticated = Wiring().authenticated
-  val propertyLinkConnector = Wiring().propertyLinkConnector
+class RepresentationController(reprConnector: PropertyRepresentationConnector,
+                               authenticated: AuthenticatedAction,
+                               propertyLinkConnector: PropertyLinkConnector,
+                               val appConfig: ApplicationConfig,
+                               val messagesApi: MessagesApi
+                              ) extends PropertyLinkingController {
 
   def manageRepresentationRequest() = authenticated.asAgent { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       reprConnector.forAgent(RepresentationApproved.name, request.organisationId).map { reprs =>
         Ok(views.html.dashboard.manageClients(ManagePropertiesVM(reprs, request.agentCode)))
       }
@@ -42,7 +47,7 @@ trait RepresentationController extends PropertyLinkingController {
 
 
   def pendingRepresentationRequest() = authenticated.asAgent { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       reprConnector.forAgent(RepresentationPending.name, request.organisationId).map { reprs =>
         Ok(views.html.dashboard.pendingPropertyRepresentations(ManagePropertiesVM(reprs, request.agentCode)))
       }
@@ -52,7 +57,7 @@ trait RepresentationController extends PropertyLinkingController {
   }
 
   def accept(submissionId: String, noOfPendingRequests: Long) = authenticated.asAgent { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       val response = RepresentationResponse(submissionId, request.personId.toLong, RepresentationResponseApproved)
       reprConnector.response(response).map { _ =>
         val continueLink = if (noOfPendingRequests > 1) {
@@ -68,7 +73,7 @@ trait RepresentationController extends PropertyLinkingController {
   }
 
   def reject(submissionId: String, noOfPendingRequests: Long) = authenticated.asAgent { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       val response = RepresentationResponse(submissionId, request.personId.toLong, RepresentationResponseDeclined)
       reprConnector.response(response).map { _ =>
         val continueLink = if (noOfPendingRequests > 1) {
@@ -84,7 +89,7 @@ trait RepresentationController extends PropertyLinkingController {
   }
 
   def revokeClient(organisationId: Long, authorisedPartyId: Long) = authenticated.asAgent { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       for {
         clientProperties <- propertyLinkConnector.clientProperties(organisationId, request.organisationAccount.id)
         clientProperty = clientProperties.filter(_.authorisedPartyId == authorisedPartyId)
@@ -100,7 +105,7 @@ trait RepresentationController extends PropertyLinkingController {
   }
 
   def revokeClientConfirmed(organisationId: Long, authorisedPartyId: Long) = authenticated.asAgent { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       (for {
         clientProperties <- OptionT.liftF(propertyLinkConnector.clientProperties(organisationId, request.organisationAccount.id))
         prop <- OptionT.fromOption(clientProperties.find(_.authorisedPartyId == authorisedPartyId))
@@ -115,11 +120,6 @@ trait RepresentationController extends PropertyLinkingController {
       Future.successful(NotFound(Global.notFoundTemplate))
     }
   }
-
-
 }
-object RepresentationController extends RepresentationController {
 
-  case class ManagePropertiesVM(propertyRepresentations: PropertyRepresentations, agentCode: Long)
-
-}
+case class ManagePropertiesVM(propertyRepresentations: PropertyRepresentations, agentCode: Long)

@@ -16,34 +16,29 @@
 
 package connectors
 
-import javax.inject.Inject
-
-import com.google.inject.{ImplementedBy, Singleton}
-import config.Wiring
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSClient
 import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.http.ws.WSHttp
 import uk.gov.hmrc.play.http.{HttpResponse, _}
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import scala.concurrent.Future
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
-
-
-@ImplementedBy(classOf[EnvelopeConnector])
 trait Envelope {
   def storeEnvelope(envelopeId: String)(implicit hc: HeaderCarrier): Future[String]
   def closeEnvelope(envelopeId: String)(implicit hc: HeaderCarrier): Future[String]
 }
 
-class EnvelopeConnector @Inject()(val ws: WSClient)(implicit ec: ExecutionContext) extends Envelope with ServicesConfig with JsonHttpReads {
-  lazy val http = Wiring().http
+class EnvelopeConnector(val ws: WSClient, http: WSHttp, servicesConfig: ServicesConfig) extends Envelope with JsonHttpReads {
+
+  private lazy val url = servicesConfig.baseUrl("property-linking")
 
   def storeEnvelope(envelopeId: String)(implicit hc: HeaderCarrier): Future[String] = {
-    http.POST[JsValue, HttpResponse](s"${baseUrl("property-linking")}/property-linking/envelopes/${envelopeId}", Json.obj()) map { _ => envelopeId }
+    http.POST[JsValue, HttpResponse](s"$url/property-linking/envelopes/$envelopeId", Json.obj()) map { _ => envelopeId }
   }
 
   def closeEnvelope(envelopeId: String)(implicit hc: HeaderCarrier): Future[String] = {
-    http.PUT[JsValue, HttpResponse](s"${baseUrl("property-linking")}/property-linking/envelopes/${envelopeId}", Json.obj()) map { _ => envelopeId }
+    http.PUT[JsValue, HttpResponse](s"$url/property-linking/envelopes/$envelopeId", Json.obj()) map { _ => envelopeId }
   }
 
 }

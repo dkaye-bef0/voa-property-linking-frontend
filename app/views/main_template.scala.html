@@ -1,3 +1,5 @@
+@import config.ApplicationConfig
+
 @(title: String,
         sidebarLinks: Option[Html] = None,
         contentHeaderText: Option[String] = None,
@@ -11,7 +13,7 @@
         topBackLink: Boolean = false,
         bottomBackLink: Boolean = false,
         backLinkUrl: Option[String] = None,
-        individualId: Option[Int] = None)(mainContent: Html)(implicit request: RequestHeader, messages: Messages)
+        individualId: Option[Int] = None)(mainContent: Html)(implicit request: RequestHeader, messages: Messages, appConfig: ApplicationConfig)
 
 @import uk.gov.hmrc.play.views.html.layouts
 

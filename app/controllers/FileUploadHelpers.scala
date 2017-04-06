@@ -19,10 +19,9 @@ package controllers
 import java.net.URLEncoder
 
 import config.ApplicationConfig
-import connectors.{EnvelopeConnector, FileInfo}
+import connectors.EnvelopeConnector
 import connectors.fileUpload.FileUpload
 import connectors.propertyLinking.PropertyLinkConnector
-import models.{LinkBasis, NoEvidenceFlag}
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.AnyContent
 import play.api.mvc.MultipartFormData.FilePart
@@ -38,6 +37,7 @@ trait FileUploadHelpers {
   val propertyLinks: PropertyLinkConnector
   val withLinkingSession: WithLinkingSession
   val linkingSession: LinkingSessionRepository
+  val appConfig: ApplicationConfig
 
   val maxFileSize = 10485760 //10MB
 
@@ -45,7 +45,7 @@ trait FileUploadHelpers {
                               (implicit request: LinkingSessionRequest[AnyContent]): Future[FileUploadResult] = {
     filePart match {
       case Some(part) if part.ref.file.length > maxFileSize => FileTooLarge
-      case Some(FilePart(_, filename, Some(mimetype), TemporaryFile(file))) if ApplicationConfig.allowedMimeTypes.contains(mimetype) =>
+      case Some(FilePart(_, filename, Some(mimetype), TemporaryFile(file))) if appConfig.allowedMimeTypes.contains(mimetype) =>
         for {
           _ <- fileUploader.uploadFile(request.ses.envelopeId, encode(filename), mimetype, file)
         } yield {

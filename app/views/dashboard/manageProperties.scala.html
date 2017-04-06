@@ -3,7 +3,7 @@
 @import utils.Formatters
 @import actions.AuthenticatedRequest
 
-@(model: controllers.ManagePropertiesVM)(implicit request: AuthenticatedRequest[_], messages: Messages)
+@(model: controllers.ManagePropertiesVM)(implicit request: AuthenticatedRequest[_], messages: Messages, appConfig: ApplicationConfig)
 
 @heading=@{
     Messages("dashboard.manageProperties.title")
@@ -80,7 +80,7 @@
                             </td>
                             <td class="last">
                                 <ul>
-                                @if(ApplicationConfig.agentEnabled) {
+                                @if(appConfig.agentEnabled) {
                                     @if(model.organisationId == p.organisationId) {
                                         <li>
                                             <a href=@routes.AppointAgentController.appoint(p.authorisationId)>@Messages("manageProperties.addAgent")

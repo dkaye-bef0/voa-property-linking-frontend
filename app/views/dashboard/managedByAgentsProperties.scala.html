@@ -3,7 +3,7 @@
 @import utils.Formatters
 @import actions.AuthenticatedRequest
 
-@(model: controllers.ManagedPropertiesVM)(implicit request: AuthenticatedRequest[_], messages: Messages)
+@(model: controllers.ManagedPropertiesVM)(implicit request: AuthenticatedRequest[_], messages: Messages, appConfig: ApplicationConfig)
 
 @main_template(
     title = Messages("dashboard.managedByAgentsProperties.title", model.agentName),

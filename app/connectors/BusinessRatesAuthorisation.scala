@@ -24,8 +24,8 @@ import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
 
 import scala.concurrent.Future
 
-class BusinessRatesAuthorisation(http: HttpGet) extends ServicesConfig {
-  val url = baseUrl("business-rates-authorisation") + "/business-rates-authorisation"
+class BusinessRatesAuthorisation(http: HttpGet, servicesConfig: ServicesConfig) {
+  val url = servicesConfig.baseUrl("business-rates-authorisation") + "/business-rates-authorisation"
 
   def authenticate(implicit hc: HeaderCarrier): Future[AuthorisationResult] = {
     http.GET[Accounts](s"$url/authenticate") map {

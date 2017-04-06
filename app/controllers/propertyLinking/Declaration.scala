@@ -16,29 +16,29 @@
 
 package controllers.propertyLinking
 
-import com.google.inject.{Inject, Singleton}
-import config.Wiring
+import config.ApplicationConfig
+import connectors.propertyLinking.PropertyLinkConnector
 import connectors.{CapacityDeclaration, EnvelopeConnector, FileInfo}
 import controllers.PropertyLinkingController
 import form.Mappings._
 import models.{LinkBasis, NoEvidenceFlag}
 import play.api.data.{Form, FormError, Forms}
-import session.LinkingSessionRequest
+import play.api.i18n.MessagesApi
+import session.{LinkingSessionRepository, LinkingSessionRequest, WithLinkingSession}
 import views.html.propertyLinking.declaration
 
-@Singleton
-class Declaration @Inject()(envelopes: EnvelopeConnector) extends PropertyLinkingController {
-
-  val linkingSessionRepo = Wiring().sessionRepository
-  val withLinkingSession = Wiring().withLinkingSession
-  val propertyLinks = Wiring().propertyLinkConnector
+class Declaration(envelopes: EnvelopeConnector,
+                  linkingSessionRepo: LinkingSessionRepository,
+                  withLinkingSession: WithLinkingSession,
+                  propertyLinks: PropertyLinkConnector,
+                  val appConfig: ApplicationConfig,
+                  val messagesApi: MessagesApi) extends PropertyLinkingController {
 
   def show = withLinkingSession { implicit request =>
     request.ses.linkBasis match {
       case Some(basis) => Ok(declaration(DeclarationVM(request.ses.address, request.ses.declaration, request.ses.fileInfo, form)))
       case None => Unauthorized
     }
-
   }
 
   def submit = withLinkingSession { implicit request =>
@@ -61,7 +61,7 @@ class Declaration @Inject()(envelopes: EnvelopeConnector) extends PropertyLinkin
 
   def confirmation = withLinkingSession { implicit request =>
     linkingSessionRepo.remove() map { _ =>
-        Ok(views.html.linkingRequestSubmitted(RequestSubmittedVM(request.ses.address, request.ses.submissionId)))
+      Ok(views.html.linkingRequestSubmitted(RequestSubmittedVM(request.ses.address, request.ses.submissionId)))
     }
   }
 

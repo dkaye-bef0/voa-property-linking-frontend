@@ -23,8 +23,8 @@ import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpGet}
 
-class VPLAuthConnector(val http: HttpGet) extends AuthConnector with ServicesConfig {
-  override val serviceUrl: String = baseUrl("auth")
+class VPLAuthConnector(val http: HttpGet, servicesConfig: ServicesConfig) extends AuthConnector {
+  override val serviceUrl: String = servicesConfig.baseUrl("auth")
 
   def getExternalId(ctx: AuthContext)(implicit hc: HeaderCarrier) = getIds[JsValue](ctx) map { r =>
     (r \ "externalId").as[String]

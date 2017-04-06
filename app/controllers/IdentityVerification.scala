@@ -16,29 +16,35 @@
 
 package controllers
 
-import config.{ApplicationConfig, Wiring}
+import auth.GGAction
+import config.{ApplicationConfig, VPLSessionCache}
+import connectors._
+import connectors.identityVerificationProxy.IdentityVerificationProxyConnector
 import models.{IVDetails, IndividualAccount, PersonalDetails}
+import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, Request}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.http.{HeaderCarrier, SessionKeys}
 
 import scala.concurrent.Future
 
-trait IdentityVerification extends PropertyLinkingController {
-  val groups = Wiring().groupAccountConnector
-  val individuals = Wiring().individualAccountConnector
-  val auth = Wiring().authConnector
-  val ggAction = Wiring().ggAction
-  val keystore = Wiring().sessionCache
-  val identityVerification = Wiring().identityVerification
-  val addresses = Wiring().addresses
-  val identityVerificationProxyConnector = Wiring().identityVerificationProxyConnector
+class IdentityVerification(groups: GroupAccounts,
+                           individuals: IndividualAccounts,
+                           auth: VPLAuthConnector,
+                           ggAction: GGAction,
+                           keystore: VPLSessionCache,
+                           identityVerification: IdentityVerificationConnector,
+                           addresses: Addresses,
+                           identityVerificationProxyConnector: IdentityVerificationProxyConnector,
+                           val appConfig: ApplicationConfig,
+                           val messagesApi: MessagesApi
+                          ) extends PropertyLinkingController {
 
   def startIv = ggAction.async { _ => implicit request =>
-    if (ApplicationConfig.ivEnabled) {
+    if (appConfig.ivEnabled) {
       keystore.getPersonalDetails flatMap { d =>
-        identityVerificationProxyConnector.start(ApplicationConfig.baseUrl + routes.IdentityVerification.restoreSession().url,
-          ApplicationConfig.baseUrl + routes.IdentityVerification.fail().url, d.ivDetails, None).map(l => Redirect(l.link))
+        identityVerificationProxyConnector.start(appConfig.applicationBaseUrl + routes.IdentityVerification.restoreSession().url,
+          appConfig.applicationBaseUrl + routes.IdentityVerification.fail().url, d.ivDetails, None).map(l => Redirect(l.link))
       }
     } else {
       Future.successful(Redirect(routes.IdentityVerification.success()).addingToSession("journeyId" -> java.util.UUID.randomUUID().toString))
@@ -93,7 +99,5 @@ trait IdentityVerification extends PropertyLinkingController {
     case None => addresses.create(details.address)
   }
 }
-
-object IdentityVerification extends IdentityVerification
 
 case class StartIVVM(data: IVDetails, url: String)

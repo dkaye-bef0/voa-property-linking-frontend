@@ -33,7 +33,7 @@ class CreateGroupAccountSpec extends ControllerSpec {
     override lazy val ggAction: GGAction = StubGGAction
     override lazy val individuals = StubIndividualAccountConnector
     override lazy val groups = StubGroupAccountConnector
-    override lazy val identityVerification = StubIdentityVerification
+    override lazy val identityVerification = StubIdentityVerificationConnector
     override lazy val keystore = StubKeystore
     override lazy val addresses = StubAddresses
   }
@@ -46,7 +46,7 @@ class CreateGroupAccountSpec extends ControllerSpec {
   }
 
   it must "return Ok if user has verified identity" in {
-    StubIdentityVerification.stubSuccessfulJourney("fakeId")
+    StubIdentityVerificationConnector.stubSuccessfulJourney("fakeId")
     val res = TestCreateGroupAccount.show()(request.withSession(token, ("journeyId", "fakeId")))
     status(res) mustBe OK
   }
@@ -57,7 +57,7 @@ class CreateGroupAccountSpec extends ControllerSpec {
   }
 
   it must "return Ok if user has verified identity" in {
-    StubIdentityVerification.stubSuccessfulJourney("fakeId")
+    StubIdentityVerificationConnector.stubSuccessfulJourney("fakeId")
     val res = TestCreateGroupAccount.success()(request.withSession(token, ("journeyId", "fakeId")))
     status(res) mustBe OK
   }
@@ -78,7 +78,7 @@ class CreateGroupAccountSpec extends ControllerSpec {
       keys.isAgent -> "false",
       keys.isSmallBusiness -> "true"
     )
-    StubIdentityVerification.stubSuccessfulJourney("fakeId")
+    StubIdentityVerificationConnector.stubSuccessfulJourney("fakeId")
     StubKeystore.stubPersonalDetails(arbitrary[PersonalDetails])
 
     val group = arbitrary[GroupAccount].sample.get
@@ -97,7 +97,7 @@ class CreateGroupAccountSpec extends ControllerSpec {
 
   it must "return Bad Request has verified identity and submitted invalid data" in {
 
-    StubIdentityVerification.stubSuccessfulJourney("fakeId")
+    StubIdentityVerificationConnector.stubSuccessfulJourney("fakeId")
 
     val group = arbitrary[GroupAccount].sample.get
     val person = arbitrary[DetailedIndividualAccount].sample.get.copy(externalId = "has-account", organisationId = group.id)

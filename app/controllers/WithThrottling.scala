@@ -16,17 +16,16 @@
 
 package controllers
 
-import config.Wiring
+import connectors.TrafficThrottleConnector
 import play.api.mvc.{AnyContent, Request, Result}
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait WithThrottling {
 
-  lazy val trafficThrottleConnector = Wiring().trafficThrottleConnector
+  val trafficThrottleConnector: TrafficThrottleConnector
 
   def withThrottledHoldingPage(route: String, throttledPage: => Result)(block: => Result)
                               (implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {

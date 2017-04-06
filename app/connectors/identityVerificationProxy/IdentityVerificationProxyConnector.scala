@@ -16,24 +16,23 @@
 
 package connectors.identityVerificationProxy
 
-import org.joda.time.LocalDate
-
 import config.ApplicationConfig
 import models.IVDetails
 import models.identityVerificationProxy._
+import org.joda.time.LocalDate
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class IdentityVerificationProxyConnector(http: HttpPost with HttpGet)(implicit ec: ExecutionContext) extends ServicesConfig {
-  private lazy val url = baseUrl("identity-verification-proxy")
+class IdentityVerificationProxyConnector(http: HttpPost with HttpGet, servicesConfig: ServicesConfig, appConfig: ApplicationConfig) {
+  private lazy val url = servicesConfig.baseUrl("identity-verification-proxy")
   private val path = "identity-verification-proxy/journey"
 
   def start(completionURL: String, failureURL:  String, userData: IVDetails,
             expiryDate: Option[LocalDate])(implicit hc: HeaderCarrier): Future[Link] = {
     http.POST[Journey, Link](s"$url/$path/start", Journey(None, "voa-property-linking",
-      completionURL, failureURL, ApplicationConfig.ivConfidenceLevel, userData, expiryDate))
+      completionURL, failureURL, appConfig.ivConfidenceLevel, userData, expiryDate))
   }
 
   def get(id: Long)(implicit hc: HeaderCarrier): Future[Journey] = {

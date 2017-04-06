@@ -43,7 +43,6 @@ trait MicroService {
       compileScalastyle := org.scalastyle.sbt.ScalastylePlugin.scalastyle.in(Compile).toTask("").value,
       test in Test <<= (test in Test) dependsOn compileScalastyle
     )
-    .settings(routesGenerator := StaticRoutesGenerator)
     .settings(inConfig(TemplateTest)(Defaults.testSettings): _*)
     .configs(IntegrationTest)
     .settings(inConfig(TemplateItTest)(Defaults.itSettings): _*)

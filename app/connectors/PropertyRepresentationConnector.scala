@@ -17,14 +17,15 @@
 package connectors
 
 import models._
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http._
+import uk.gov.hmrc.play.http.ws.WSHttp
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class PropertyRepresentationConnector(http: HttpGet with HttpPut with HttpPost with HttpPatch)(implicit ec: ExecutionContext)
-  extends ServicesConfig {
-  lazy val baseUrl: String = baseUrl("property-representations") + s"/property-linking"
+class PropertyRepresentationConnector(http: WSHttp, servicesConfig: ServicesConfig) {
+  lazy val baseUrl: String = servicesConfig.baseUrl("property-representations") + s"/property-linking"
 
   def validateAgentCode(agentCode:Long, authorisationId: Long)(implicit hc: HeaderCarrier) = {
     val url = baseUrl + s"/property-representations/validate-agent-code/$agentCode/$authorisationId"

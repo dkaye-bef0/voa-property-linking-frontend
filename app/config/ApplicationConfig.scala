@@ -16,17 +16,13 @@
 
 package config
 
-import config.ConfigHelper.mustGetConfigString
-import play.api.Play
-import play.api.Play._
-import uk.gov.hmrc.play.config.RunMode
-import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.ConfidenceLevel
 import org.joda.time.LocalDate
+import play.api.{Configuration, Environment, Mode}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.ConfidenceLevel
 
-object ApplicationConfig extends RunMode with ServicesConfig {
+class ApplicationConfig(config: Configuration, environment: Environment) {
 
-  def baseUrl = if (env == "Prod") "" else "http://localhost:9523"
+  def applicationBaseUrl = if (environment.mode == Mode.Prod) "" else "http://localhost:9523"
   val contact = getConfig("contact-frontend.url")
   val contactFormServiceIdentifier = "CCA"
 
@@ -35,7 +31,7 @@ object ApplicationConfig extends RunMode with ServicesConfig {
 
   val ggSignInUrl = getConfig("gg-sign-in.url")
   val ggRegistrationUrl = getConfig("gg-registration.url")
-  val ggContinueUrl = baseUrl + controllers.routes.Dashboard.home().url
+  val ggContinueUrl = applicationBaseUrl + controllers.routes.Dashboard.home().url
   val betaLoginRequired = getConfig("featureFlags.betaLoginRequired").toBoolean
   val ivEnabled = getConfig("featureFlags.ivEnabled").toBoolean
   val ivConfidenceLevel = ConfidenceLevel.L200
@@ -45,7 +41,7 @@ object ApplicationConfig extends RunMode with ServicesConfig {
   val casesEnabled = getConfig("featureFlags.casesEnabled").toBoolean
   val propertyLinkingEnabled = getConfig("featureFlags.propertyLinkingEnabled").toBoolean
 
-  val propertyLinkingDateThreshold = configuration.getString("propertyLinkingDateThreshold").fold(new LocalDate(2017,4,1))(LocalDate.parse(_))
+  val propertyLinkingDateThreshold = config.getString("propertyLinkingDateThreshold").fold(new LocalDate(2017,4,1))(LocalDate.parse(_))
 
   val showReleaseNotes = getConfig("featureFlags.showReleaseNotes").toBoolean
 
@@ -53,11 +49,11 @@ object ApplicationConfig extends RunMode with ServicesConfig {
 
   lazy val reportAProblemPartialUrl = s"$contact/problem_reports_ajax?service=$contactFormServiceIdentifier"
   lazy val reportAProblemNonJSUrl = s"$contact/problem_reports_nonjs?service=$contactFormServiceIdentifier"
-  lazy val analyticsToken = mustGetConfigString(Play.current, s"google-analytics.token")
-  lazy val analyticsHost = mustGetConfigString(Play.current, s"google-analytics.host")
-  lazy val voaPersonID = mustGetConfigString(Play.current, s"google-analytics.dimensions.voaPersonId")
+  lazy val analyticsToken = getConfig("google-analytics.token")
+  lazy val analyticsHost = getConfig("google-analytics.host")
+  lazy val voaPersonID = getConfig("google-analytics.dimensions.voaPersonId")
 
-  private def getConfig(key: String) = configuration.getString(key).getOrElse(throw ConfigMissing(key))
+  private def getConfig(key: String) = config.getString(key).getOrElse(throw ConfigMissing(key))
 }
 
 private case class ConfigMissing(key: String) extends Exception(s"Missing config for $key")

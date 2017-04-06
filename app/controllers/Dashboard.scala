@@ -16,20 +16,26 @@
 
 package controllers
 
-import config.{ApplicationConfig, Global, Wiring}
-import controllers.Application.withThrottledHoldingPage
+import actions.AuthenticatedAction
+import config.{ApplicationConfig, Global}
+import connectors._
+import connectors.propertyLinking.PropertyLinkConnector
 import models._
 import org.joda.time.{DateTime, LocalDate}
+import play.api.i18n.MessagesApi
 
 import scala.concurrent.Future
 
-trait Dashboard extends PropertyLinkingController {
-  val propertyLinks = Wiring().propertyLinkConnector
-  val reprConnector = Wiring().propertyRepresentationConnector
-  val individuals = Wiring().individualAccountConnector
-  val groups = Wiring().groupAccountConnector
-  val auth = Wiring().authConnector
-  val authenticated = Wiring().authenticated
+class Dashboard(propertyLinks: PropertyLinkConnector,
+                reprConnector: PropertyRepresentationConnector,
+                individuals: IndividualAccounts,
+                groups: GroupAccounts,
+                auth: VPLAuthConnector,
+                authenticated: AuthenticatedAction,
+                val appConfig: ApplicationConfig,
+                val messagesApi: MessagesApi,
+                val trafficThrottleConnector: TrafficThrottleConnector
+               ) extends PropertyLinkingController with WithThrottling {
 
   def home() = authenticated { implicit request =>
     withThrottledHoldingPage("dashboard", Ok(views.html.errors.errorDashboard())) {
@@ -50,7 +56,7 @@ trait Dashboard extends PropertyLinkingController {
       val agentInfos = props
         .filterNot(_.userActingAsAgent)
         .flatMap(_.agents)
-        .map(a=> AgentInfo(a.organisationName, a.agentCode))
+        .map(a => AgentInfo(a.organisationName, a.agentCode))
         .sortBy(_.organisationName).distinct
       Ok(views.html.dashboard.manageAgents(ManageAgentsVM(agentInfos)))
     }
@@ -70,7 +76,7 @@ trait Dashboard extends PropertyLinkingController {
   }
 
   def clientProperties(organisationId: Long) = authenticated.asAgent { implicit request =>
-    if (ApplicationConfig.agentEnabled) {
+    if (appConfig.agentEnabled) {
       propertyLinks.clientProperties(organisationId, request.organisationId) map { props =>
         if (props.exists(_.authorisedPartyStatus == RepresentationApproved)) {
           val filteredProps: Seq[ClientProperty] = props.filter(_.authorisedPartyStatus == RepresentationApproved)
@@ -83,7 +89,7 @@ trait Dashboard extends PropertyLinkingController {
   }
 
   def draftCases() = authenticated { implicit request =>
-    if (ApplicationConfig.casesEnabled) {
+    if (appConfig.casesEnabled) {
       val dummyData = Seq(
         DraftCase(1234, 146440182, "4, EX2 7LL", 123456789, new LocalDate(2017, 1, 3), "Agent ltd", "Check", new LocalDate(2017, 2, 3)),
         DraftCase(2345, 146440182, "1, RG2 9WX", 321654987, new LocalDate(2017, 1, 6), "Agent ltd", "Check", new LocalDate(2017, 2, 6))
@@ -95,9 +101,8 @@ trait Dashboard extends PropertyLinkingController {
   }
 }
 
-object Dashboard extends Dashboard
-
 case class ManagePropertiesVM(organisationId: Long, properties: Seq[PropertyLink])
+
 case class ManagedPropertiesVM(agentName: String, agentCode: Long, properties: Seq[PropertyLink])
 
 case class ManageAgentsVM(agents: Seq[AgentInfo])
