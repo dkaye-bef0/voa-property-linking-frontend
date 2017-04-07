@@ -19,6 +19,11 @@
                     e.preventDefault();
                 });
                 $('.filer_input').attr('tabindex', '-1');
+
+                if(!$('.filer_input').val() && $('#error-summary').hasClass('error-summary')){
+                    $('.file-error').text('Please upload some evidence');
+                }
+
             },
             limit: 1,
             maxSize: 10,

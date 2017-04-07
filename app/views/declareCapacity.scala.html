@@ -6,7 +6,10 @@
 @(model: DeclareCapacityVM)(implicit request: Request[_], messages: Messages)
 
 
-@main_template(title = Messages("declareCapacity.title")) {
+@main_template(
+    title = Messages("declareCapacity.title"),
+    topNavigation = false
+) {
 
 
     <div class="grid-row">
@@ -111,6 +114,7 @@
 
                 <p>
                     <button type="submit" id="continue" name="continue_button" class="button">@Messages("declareCapacity.submit.button")</button>
+                    <a href="@routes.ClaimProperty.show" class="button-secondary">@Messages("label.cancel")</a>
                 </p>
 
             </div>

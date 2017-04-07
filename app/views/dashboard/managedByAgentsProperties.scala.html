@@ -9,6 +9,7 @@
     title = Messages("dashboard.managedByAgentsProperties.title", model.agentName),
     topBackLink = true,
     bottomBackLink = true,
+    backLinkUrl = Some(routes.Dashboard.manageAgents.url),
     individualId = Some(request.personId)
 ) {
 

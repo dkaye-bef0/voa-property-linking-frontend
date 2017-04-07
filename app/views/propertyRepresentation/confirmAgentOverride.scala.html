@@ -3,18 +3,17 @@
 
 @main_template(
     title = Messages("propertyRepresentation.overrideAgent.title"),
-    topNavigation = true,
-    topBackLink = true,
-    bottomBackLink = true
+    topNavigation = false
 ) {
 
 
     <div class="grid-row">
         <div class="column-two-thirds">
 
-            <h1 class="heading-xlarge">
-            @Messages("propertyRepresentation.overrideAgent.title")
-            </h1>
+
+            <div class="transaction-banner--complete">
+                <h1 class="transaction-banner__heading">@Messages("propertyRepresentation.overrideAgent.title")</h1>
+            </div>
 
             <p>@Messages("propertyRepresentation.overrideAgent.message.1")</p>
             <ul class="list-bullet">
@@ -24,14 +23,17 @@
                 </li>
             }
             </ul>
-            <p>@Messages("propertyRepresentation.overrideAgent.message.3", model.newAgent.agentCode.toString, model.newAgent.availablePermission.sorted.reverse.mkString(" and "), model.newAgent.availablePermission.sorted.reverse.mkString(" and "))</p>
-            <p>@Messages("propertyRepresentation.overrideAgent.message.4")</p>
+
+            <p class="panel panel-border-wide">@Messages("propertyRepresentation.overrideAgent.message.3", model.newAgent.agentCode.toString, model.newAgent.availablePermission.sorted.reverse.mkString(" and "), model.newAgent.availablePermission.sorted.reverse.mkString(" and "))</p>
+
+
+            <strong>@Messages("propertyRepresentation.overrideAgent.message.4")</strong>
 
             <p>
                 <a href="@routes.AppointAgentController.confirmed(model.authorisationId)" class="button">
                     @Messages("propertyRepresentation.overrideAgent.button.yes")
                 </a>
-                <a href="@routes.AppointAgentController.declined(model.authorisationId)" class="button">
+                <a href="@routes.AppointAgentController.declined(model.authorisationId)" class="button-secondary">
                     @Messages("propertyRepresentation.overrideAgent.button.no")
                 </a>
             </p>

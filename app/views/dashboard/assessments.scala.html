@@ -3,16 +3,26 @@
 @import utils.Formatters
 @import actions.AuthenticatedRequest
 
+
 @(model: controllers.AssessmentsVM)(implicit request: AuthenticatedRequest[_], messages: Messages)
+
+@backLink = @{
+    if(request.headers.get("referer").toString.contains("business-rates-valuation")){
+        routes.Dashboard.manageProperties.url
+    }else{
+        request.headers.get("referer").getOrElse(routes.Dashboard.manageProperties.url)
+    }
+}
 
 @main_template(
     title = Messages("assessments.title"),
     topBackLink = true,
     bottomBackLink = true,
+    backLinkUrl = Some(backLink),
     individualId = Some(request.personId)
 ) {
     <h1 class="heading-xlarge margin-bottom-0 clear-right">
-    @Messages("assessments.title")
+        @Messages("assessments.title")
     </h1>
 
     <h2 class="heading-secondary">@(Formatters.capitalizedAddress(model.assessments.head.address))</h2>

@@ -4,9 +4,7 @@
 
 @main_template(
     title = Messages("propertyRepresentation.revokeAgent.title"),
-    topNavigation = true,
-    topBackLink = true,
-    bottomBackLink = true
+    topNavigation = false
 ) {
     <div class="grid-row">
         <div class="column-two-thirds">
@@ -19,6 +17,9 @@
             <p>
                 <a href="@controllers.routes.AppointAgentController.revokeAgentConfirmed(agentCode, authorisedPartyId)" class="button">
                     @Messages("propertyRepresentation.revokeAgent.button")
+                </a>
+                <a href="@request.headers.get("referer")" class="button-secondary">
+                    @Messages("label.cancel")
                 </a>
             </p>
 

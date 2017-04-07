@@ -3,8 +3,12 @@
 
 @(model: UploadRatesBillVM)(implicit request: Request[_], messages: Messages)
 
-    @main_template(title = Messages("uploadRatesBill.show.title"),
-        topBackLink = true, bottomBackLink = true) {
+    @main_template(
+        title = Messages("uploadRatesBill.show.title"),
+        topBackLink = true,
+        bottomBackLink = true,
+        topNavigation = false
+    ) {
 
         @form(routes.UploadRatesBill.submit(), 'enctype -> "multipart/form-data") {
 

@@ -525,6 +525,7 @@ detailedValuationRequested.p.1=We’ll send this to you by {0} within 10 working
 
 #COMMON
 label.continue=Continue
+label.cancel=Cancel
 label.companyName=Company name
 label.footer.licence=All content is available under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" rel="license">Open Government Licence v3.0</a>, except where otherwise stated
 label.footer.ogl=Open Government Licence

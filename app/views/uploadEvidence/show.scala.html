@@ -4,7 +4,12 @@
 @(model: UploadEvidenceVM)(implicit request: Request[_], messages: Messages)
 
 
-@main_template(title = Messages("uploadEvidence.show.title"), bottomBackLink = true, topBackLink = true) {
+@main_template(
+    title = Messages("uploadEvidence.show.title"),
+    bottomBackLink = true,
+    topBackLink = true,
+    topNavigation = false
+) {
 
 
     @form(routes.UploadEvidence.submit(), 'enctype -> "multipart/form-data") {
@@ -63,7 +68,7 @@
                     )
                 )
 
-                <button type="submit" class="button">@Messages("uploadEvidence.show.button")</button>
+                <p><button type="submit" class="button">@Messages("uploadEvidence.show.button")</button></p>
             </div>
         </div>
 

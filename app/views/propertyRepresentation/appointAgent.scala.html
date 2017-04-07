@@ -6,11 +6,17 @@
 @(model: AppointAgentVM)(implicit request: Request[_], messages: Messages)
 
 
+@backLinkUrl = @{
+    if(request.headers.get("referer").toString.contains(routes.Dashboard.manageProperties.url.toString) || request.headers.get("referer").toString.contains(request.path)){
+        routes.Dashboard.manageProperties.url
+    }else{
+        request.headers.get("referer").getOrElse(routes.Dashboard.manageProperties.url)
+    }
+}
+
 @main_template(
     title = Messages("propertyRepresentation.appointAgent.title"),
-    topNavigation = true,
-    topBackLink = true,
-    bottomBackLink = true
+    topNavigation = false
 ) {
 
 
@@ -70,7 +76,11 @@
                         '_detailsAnswer -> Messages("canChallenge.details")
                     )
                 )
-                <p><button type="submit" class="button">@Messages("propertyRepresentation.appointAgent.button")</button></p>
+                <p>
+                    <button type="submit" class="button">@Messages("propertyRepresentation.appointAgent.button")</button>
+                    <a href="@backLinkUrl" class="button-secondary">@Messages("label.cancel")</a>
+                </p>
+
 
             }
 
