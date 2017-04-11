@@ -36,6 +36,8 @@ import views.helpers.Errors
 
 @Singleton
 class ClaimProperty @Inject()(val fileUploadConnector: FileUploadConnector) extends PropertyLinkingController with ServicesConfig {
+  import ClaimProperty._
+
   lazy val sessionRepository = Wiring().sessionRepository
   lazy val authenticated = Wiring().authenticated
   lazy val submissionIdConnector = Wiring().submissionIdConnector
@@ -45,11 +47,14 @@ class ClaimProperty @Inject()(val fileUploadConnector: FileUploadConnector) exte
   }
 
   def declareCapacity(uarn: Long, address: String) = authenticated { implicit request =>
-    Ok(views.html.declareCapacity(DeclareCapacityVM(ClaimProperty.declareCapacityForm, address, uarn)))
+    sessionRepository.get() map {
+      case Some(session) => Ok(views.html.declareCapacity(DeclareCapacityVM(declareCapacityForm.fillAndValidate(session.declaration), address, uarn)))
+      case None => Ok(views.html.declareCapacity(DeclareCapacityVM(declareCapacityForm, address, uarn)))
+    }
   }
 
   def attemptLink(uarn: Long, address: String) = authenticated { implicit request =>
-    ClaimProperty.declareCapacityForm.bindFromRequest().fold(
+    declareCapacityForm.bindFromRequest().fold(
       errors => BadRequest(views.html.declareCapacity(DeclareCapacityVM(errors, address, uarn))),
       formData => initialiseSession(formData, uarn, address) map { _ =>
         Redirect(routes.ChooseEvidence.show())

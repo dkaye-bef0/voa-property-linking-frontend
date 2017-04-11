@@ -7,7 +7,7 @@
 @(model: controllers.AssessmentsVM)(implicit request: AuthenticatedRequest[_], messages: Messages)
 
 @backLink = @{
-    if(request.headers.get("referer").toString.contains("business-rates-valuation")){
+    if(request.headers.get("referer").exists(_.contains("business-rates-valuation"))){
         routes.Dashboard.manageProperties.url
     }else{
         request.headers.get("referer").getOrElse(routes.Dashboard.manageProperties.url)

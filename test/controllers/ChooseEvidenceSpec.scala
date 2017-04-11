@@ -19,7 +19,7 @@ import connectors.CapacityDeclaration
 import models.{DetailedIndividualAccount, GroupAccount, Owner, Property}
 import org.scalacheck.Arbitrary.arbitrary
 import play.api.test.FakeRequest
-import utils.{HtmlPage, StubWithLinkingSession}
+import utils.{HtmlPage, StubLinkingSessionRepository, StubWithLinkingSession}
 import play.api.test.Helpers._
 import resources._
 import _root_.session.LinkingSession
@@ -27,8 +27,8 @@ import _root_.session.LinkingSession
 class ChooseEvidenceSpec extends ControllerSpec {
 
   private object TestChooseEvidence extends ChooseEvidence {
-    val property = testProperty
     override val withLinkingSession = StubWithLinkingSession
+    override val linkingSessionRepo = new StubLinkingSessionRepository
   }
 
   lazy val testProperty: Property = arbitrary[Property]

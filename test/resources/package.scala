@@ -54,7 +54,7 @@ package object resources {
   } yield new LocalDate(year, month, day)
 
   val propertyAddressGen: Gen[PropertyAddress] = for {
-    lines <- Gen.nonEmptyListOf(shortString)
+    lines <- Gen.listOfN(5, shortString)
     postcode <- shortString
   } yield PropertyAddress(lines, postcode)
 
@@ -237,8 +237,9 @@ package object resources {
     submissionId <- shortString
     personId <- positiveLong
     declaration <- capacityDeclarationGen
+    hasRatesBill <- Gen.option(arbitrary[Boolean])
     linkBasis <- Gen.oneOf(LinkBasis.all)
-  } yield LinkingSession(address, uarn, envelopeId, submissionId, personId, declaration, Some(linkBasis), None)
+  } yield LinkingSession(address, uarn, envelopeId, submissionId, personId, declaration, hasRatesBill, Some(linkBasis), None)
 
   implicit val arbitraryLinkinSession: Arbitrary[LinkingSession] = Arbitrary(linkingSessionGen)
 }

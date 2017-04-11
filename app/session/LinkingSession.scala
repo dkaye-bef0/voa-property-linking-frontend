@@ -26,7 +26,8 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 import scala.concurrent.Future
 
 case class LinkingSession(address: String, uarn: Long, envelopeId: String, submissionId: String, personId: Long,
-                          declaration: CapacityDeclaration, linkBasis: Option[LinkBasis] = None, fileInfo: Option[FileInfo] = None) {
+                          declaration: CapacityDeclaration, hasRatesBill: Option[Boolean] = None,
+                          linkBasis: Option[LinkBasis] = None, fileInfo: Option[FileInfo] = None) {
 
   def withLinkBasis(basis: LinkBasis, fileInfo: Option[FileInfo]) = copy(linkBasis = Some(basis), fileInfo = fileInfo)
 }

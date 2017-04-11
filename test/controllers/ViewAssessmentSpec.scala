@@ -23,6 +23,8 @@ import models._
 import org.jsoup.Jsoup
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalatest.OptionValues
+import play.api.Logger
+import play.api.http.HeaderNames
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import resources._
@@ -43,12 +45,7 @@ class ViewAssessmentSpec extends ControllerSpec with OptionValues {
   }
 
   "The assessments page for a property link" must "display the effective assessment date, the rateable value, capacity, and link dates for each assessment" in {
-    val organisation = arbitrary[GroupAccount].sample.get
-    val person = arbitrary[DetailedIndividualAccount].sample.get
-    val link = arbitrary[PropertyLink].sample.get.copy(organisationId = organisation.id)
-
-    StubAuthentication.stubAuthenticationResult(Authenticated(Accounts(organisation, person)))
-    StubPropertyLinkConnector.stubLink(link)
+    val link = setupLink()
 
     val res = TestAssessmentController.assessments(link.authorisationId, link.pending)(FakeRequest())
     status(res) mustBe OK
@@ -105,12 +102,7 @@ class ViewAssessmentSpec extends ControllerSpec with OptionValues {
   }
 
   "Viewing a detailed valuation" must "redirect to business rates valuation if the property is bulk" in {
-    val organisation = arbitrary[GroupAccount].sample.get
-    val person = arbitrary[DetailedIndividualAccount].sample.get
-    val link = arbitrary[PropertyLink].sample.get.copy(organisationId = organisation.id, pending = true)
-
-    StubAuthentication.stubAuthenticationResult(Authenticated(Accounts(organisation, person)))
-    StubPropertyLinkConnector.stubLink(link)
+    val link = setupLink()
     StubBusinessRatesValuation.stubValuation(link.assessment.head.assessmentRef, true)
 
     val res = TestAssessmentController.viewDetailedAssessment(link.assessment.head.authorisationId, link.assessment.head.assessmentRef, link.assessment.head.billingAuthorityReference)(FakeRequest())
@@ -120,17 +112,80 @@ class ViewAssessmentSpec extends ControllerSpec with OptionValues {
   }
 
   it must "redirect to the request detailed valuation page if the property is non-bulk" in {
-    val organisation = arbitrary[GroupAccount].sample.get
-    val person = arbitrary[DetailedIndividualAccount].sample.get
-    val link = arbitrary[PropertyLink].sample.get.copy(organisationId = organisation.id, pending = true)
-
-    StubAuthentication.stubAuthenticationResult(Authenticated(Accounts(organisation, person)))
-    StubPropertyLinkConnector.stubLink(link)
+    val link = setupLink()
     StubBusinessRatesValuation.stubValuation(link.assessment.head.assessmentRef, false)
 
     val res = TestAssessmentController.viewDetailedAssessment(link.assessment.head.authorisationId, link.assessment.head.assessmentRef, link.assessment.head.billingAuthorityReference)(FakeRequest())
     status(res) mustBe SEE_OTHER
 
     redirectLocation(res).value mustBe routes.Assessments.requestDetailedValuation(link.assessment.head.authorisationId, link.assessment.head.assessmentRef, link.assessment.head.billingAuthorityReference).url
+  }
+
+  "The back link on the assessments page" must "go to the manage properties page, if the user came from the manage properties page" in {
+    val link = setupLink()
+
+    val res = TestAssessmentController.assessments(
+      link.authorisationId,
+      link.pending
+    )(FakeRequest().withHeaders(HeaderNames.REFERER -> routes.Dashboard.manageProperties().url))
+
+    status(res) mustBe OK
+
+    val html = Jsoup.parse(contentAsString(res))
+    html.select("#backLinkTop").attr("href") mustBe routes.Dashboard.manageProperties().url
+  }
+
+  it must "go to the manage client properties page, if the user came from the manage client properties page" in {
+    val link = setupLink()
+
+    val res = TestAssessmentController.assessments(
+      link.authorisationId,
+      link.pending
+    )(FakeRequest().withHeaders(HeaderNames.REFERER -> routes.Dashboard.clientProperties(link.organisationId).url))
+
+    status(res) mustBe OK
+
+    val html = Jsoup.parse(contentAsString(res))
+    html.select("#backLinkTop").attr("href") mustBe routes.Dashboard.clientProperties(link.organisationId).url
+  }
+
+  it must "go to the properties mananged by agent page if the user came from the properties managed by agent page" in {
+    val link = setupLink()
+    val agentCode: Long = positiveLong
+
+    val res = TestAssessmentController.assessments(
+      link.authorisationId,
+      link.pending
+    )(FakeRequest().withHeaders(HeaderNames.REFERER -> routes.Dashboard.viewManagedProperties(agentCode).url))
+
+    status(res) mustBe OK
+
+    val html = Jsoup.parse(contentAsString(res))
+    html.select("#backLinkTop").attr("href") mustBe routes.Dashboard.viewManagedProperties(agentCode).url
+  }
+
+  it must "go to the manage properties page if the user came from the detailed valuation page" in {
+    val link = setupLink()
+
+    val res = TestAssessmentController.assessments(
+      link.authorisationId,
+      link.pending
+    )(FakeRequest().withHeaders(HeaderNames.REFERER -> s"www.tax.service.gov.uk/business-rates-valuation/property-link/${link.authorisationId}/assessment/${link.assessment.head.assessmentRef}"))
+
+    status(res) mustBe OK
+
+    val html = Jsoup.parse(contentAsString(res))
+    html.select("#backLinkTop").attr("href") mustBe routes.Dashboard.manageProperties.url
+  }
+
+  private def setupLink() = {
+    val organisation = arbitrary[GroupAccount].sample.get
+    val person = arbitrary[DetailedIndividualAccount].sample.get
+    val link = arbitrary[PropertyLink].sample.get.copy(organisationId = organisation.id)
+
+    StubAuthentication.stubAuthenticationResult(Authenticated(Accounts(organisation, person)))
+    StubPropertyLinkConnector.stubLink(link)
+
+    link
   }
 }

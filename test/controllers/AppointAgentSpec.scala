@@ -19,11 +19,15 @@ package controllers
 import config.VPLSessionCache
 import connectors.Authenticated
 import models._
+import org.jsoup.Jsoup
 import org.scalacheck.Arbitrary.arbitrary
+import play.api.Logger
+import play.api.http.HeaderNames
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import resources._
 import utils._
+import scala.collection.JavaConverters._
 
 class AppointAgentSpec extends ControllerSpec {
 
@@ -161,8 +165,6 @@ class AppointAgentSpec extends ControllerSpec {
 
     StubPropertyLinkConnector.stubLink(link)
 
-
-
     val res = TestAppointAgent.appointSubmit(link.authorisationId)(
       request.withFormUrlEncodedBody("agentCode" -> groupAccount.agentCode.toString, "canCheck" -> StartAndContinue.name, "canChallenge" -> NotPermitted.name)
     )
@@ -173,7 +175,6 @@ class AppointAgentSpec extends ControllerSpec {
 
   it must "display the success page when the form is valid, and no permission have previously been set" in {
     val (groupAccount, individual) = stubLoggedInUser()
-    StubGroupAccountConnector.stubAccount(arbitrary[GroupAccount].sample.get)
     val link = arbitrary[PropertyLink].sample.get.copy(organisationId = groupAccount.id, authorisationId = 555, agents = Nil)
     StubPropertyLinkConnector.stubLink(link)
     StubPropertyRepresentationConnector.stubAgentCode(123)
@@ -184,6 +185,43 @@ class AppointAgentSpec extends ControllerSpec {
 
     status(res) must be (SEE_OTHER)
     redirectLocation(res) mustBe Some(routes.AppointAgentController.appointed(link.authorisationId).url)
+  }
+
+  "The back link on the appoint agents page" must "go to the manage properties page if the user came from the manage properties page" in {
+    stubLoggedInUser()
+
+    val res = TestAppointAgent.appoint(arbitrary[PropertyLink].authorisationId)(FakeRequest().withHeaders(HeaderNames.REFERER -> routes.Dashboard.manageProperties().url))
+    status(res) mustBe OK
+
+    val html = Jsoup.parse(contentAsString(res))
+    html.select("#cancel").attr("href") mustBe routes.Dashboard.manageProperties().url
+  }
+
+  it must "go to the properties managed by agent page if the user came from the properties managed by agent page" in {
+    stubLoggedInUser()
+    val agentCode: Long = positiveLong
+    val authorisationId = arbitrary[PropertyLink].authorisationId
+    val request = FakeRequest("GET", routes.AppointAgentController.appoint(authorisationId).url).withHeaders(HeaderNames.REFERER -> routes.Dashboard.viewManagedProperties(agentCode).url)
+
+    val res = TestAppointAgent.appoint(arbitrary[PropertyLink].authorisationId)(request)
+    status(res) mustBe OK
+
+    val html = Jsoup.parse(contentAsString(res))
+    html.select("#cancel").attr("href") mustBe routes.Dashboard.viewManagedProperties(agentCode).url
+  }
+
+  //filling in the form incorrectly changes the referer to be the same as the page url
+  it must "go to the manage properties page if the user has filled in the form incorrectly" in {
+    stubLoggedInUser()
+    val agentCode: Long = positiveLong
+    val authorisationId = arbitrary[PropertyLink].authorisationId
+
+    val request = FakeRequest("GET", routes.AppointAgentController.appoint(authorisationId).url).withHeaders(HeaderNames.REFERER -> routes.AppointAgentController.appoint(authorisationId).url)
+    val res = TestAppointAgent.appoint(authorisationId)(request)
+    status(res) mustBe OK
+
+    val html = Jsoup.parse(contentAsString(res))
+    html.select("#cancel").attr("href") mustBe routes.Dashboard.manageProperties.url
   }
 
   private def stubLoggedInUser() = {

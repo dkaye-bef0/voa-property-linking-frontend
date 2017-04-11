@@ -23,18 +23,25 @@ import form.Mappings._
 
 trait ChooseEvidence extends PropertyLinkingController {
 
+  val linkingSessionRepo = Wiring().sessionRepository
   val withLinkingSession = Wiring().withLinkingSession
 
   def show = withLinkingSession { implicit request =>
-    Ok(views.html.uploadRatesBill.chooseEvidence(form))
+    request.ses.hasRatesBill match {
+      case Some(h) => Ok(views.html.uploadRatesBill.chooseEvidence(form.fill(h)))
+      case _ => Ok(views.html.uploadRatesBill.chooseEvidence(form))
+    }
   }
 
   def submit = withLinkingSession { implicit request =>
     form.bindFromRequest().fold(
       errors => BadRequest(views.html.uploadRatesBill.chooseEvidence(errors)),
-      {
-        case true => Redirect(routes.UploadRatesBill.show)
-        case false => Redirect(routes.UploadEvidence.show)
+      hasRatesBill => linkingSessionRepo.saveOrUpdate(request.ses.copy(hasRatesBill = Some(hasRatesBill))) map { _ =>
+        if (hasRatesBill) {
+          Redirect(routes.UploadRatesBill.show)
+        } else {
+          Redirect(routes.UploadEvidence.show)
+        }
       }
     )
   }

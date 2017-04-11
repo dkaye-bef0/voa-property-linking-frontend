@@ -36,7 +36,7 @@ class UploadRatesBill @Inject()(override val fileUploader: FileUploadConnector, 
   lazy val linkingSession = Wiring().sessionRepository
 
   def show() = withLinkingSession { implicit request =>
-    Ok(views.html.uploadRatesBill.show(UploadRatesBillVM(form)))
+    Ok(views.html.uploadRatesBill.show(UploadRatesBillVM(form.fillAndValidate(request.ses.fileInfo.map(_.name).getOrElse("")))))
   }
 
   def submit() = withLinkingSession { implicit request =>
