@@ -26,6 +26,7 @@ import play.api.mvc.Result
 import play.twirl.api.Html
 
 import scala.concurrent.Future
+import scala.util.matching.Regex
 
 case class HtmlPage(html: Document) extends MustMatchers with AppendedClues {
   type FieldId = String
@@ -47,6 +48,13 @@ case class HtmlPage(html: Document) extends MustMatchers with AppendedClues {
   }
 
   def mustContainLink(selector: String, href: String) = mustContain1(s"a$selector[href=$href]")
+
+  def mustContainPartialLink(selector: String, regex: Regex) = {
+    val a = html.select(selector).asScala
+    a.exists { link =>
+      regex.findFirstIn(link.outerHtml()).nonEmpty
+    } mustBe true withClue s"No element matching $selector matching: $regex."
+  }
 
   def mustContainTableHeader(cellValues: String*) {
     val rows = html.select("table thead tr").asScala

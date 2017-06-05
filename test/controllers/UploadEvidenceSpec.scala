@@ -83,48 +83,39 @@ class UploadEvidenceSpec extends ControllerSpec with FileUploadTestHelpers {
     page.mustContainFileInput("evidence")
   }
 
-  it must "redirect to the evidence-submitted page if valid evidence has been uploaded" in {
-    withLinkingSession.stubSession(arbitrary[LinkingSession].copy(envelopeId = envelopeId), arbitrary[DetailedIndividualAccount], arbitrary[GroupAccount])
-
-    val req = FakeRequest(Helpers.POST, "/property-linking/upload-evidence")
-      .withMultipartFormDataBody(
-        MultipartFormData(
-          dataParts = Map(
-            "evidenceType" -> Seq(OtherUtilityBill.name)
-          ),
-          files = Seq(
-            FilePart("evidence[]", validFilePath, Some(validMimeType), validFile)
-          ),
-          badParts = Seq.empty
-        )
-      ).withSession(token)
-    val res = TestUploadEvidence.submit()(req)
-
-    status(res) mustBe SEE_OTHER
-    header("location", res) mustBe Some(propertyLinking.routes.Declaration.show.url)
-
-    verify(mockFileUploads).uploadFile(
-      matching(envelopeId),
-      matching(validFilePath),
-      matching(validMimeType),
-      any())(any()
-    )
-  }
-
-  it must "show an error if the user does not upload any evidence" in {
+  it must "have its form submit targetted to the file upload service" in {
     withLinkingSession.stubSession(arbitrary[LinkingSession], arbitrary[DetailedIndividualAccount], arbitrary[GroupAccount])
 
-    val req = FakeRequest(Helpers.POST, "/property-linking/upload-evidence")
-      .withMultipartFormDataBody(
-        MultipartFormData(
-          dataParts = Map(
-            "evidenceType" -> Seq(OtherUtilityBill.name)
-          ),
-          files = Seq(),
-          badParts = Seq.empty
-        )
-      ).withSession(token)
-    val res = TestUploadEvidence.submit()(req)
+    val res = TestUploadEvidence.show()(request)
+    status(res) mustBe OK
+    val page = HtmlPage(Jsoup.parse(contentAsString(res)))
+    page.mustContainPartialLink("form", "http.*/file-upload/upload/envelopes/[^/]*/files/[^/]*".r)
+  }
+
+  it must "have a redirect-success-url set as part of the form submit's query string - to the evidence-submitted page" in {
+    withLinkingSession.stubSession(arbitrary[LinkingSession], arbitrary[DetailedIndividualAccount], arbitrary[GroupAccount])
+
+    val res = TestUploadEvidence.show()(request)
+    status(res) mustBe OK
+    val page = HtmlPage(Jsoup.parse(contentAsString(res)))
+    page.mustContainPartialLink("form", "redirect-success-url=http.*/property-linking/evidence-submitted".r)
+  }
+
+  it must "have a redirect-error-url url set as part of the form submit's query string - to the form page itself" in {
+    withLinkingSession.stubSession(arbitrary[LinkingSession], arbitrary[DetailedIndividualAccount], arbitrary[GroupAccount])
+
+    val res = TestUploadEvidence.show()(request)
+    status(res) mustBe OK
+    val page = HtmlPage(Jsoup.parse(contentAsString(res)))
+    page.mustContainPartialLink("form", "redirect-error-url=http.*/property-linking/upload-evidence".r)
+  }
+
+  it must "show an error if the user does not upload any evidence - when errorCode=400 is set" in {
+    withLinkingSession.stubSession(arbitrary[LinkingSession], arbitrary[DetailedIndividualAccount], arbitrary[GroupAccount])
+
+    val req = FakeRequest(Helpers.GET, "/property-linking/upload-evidence?errorCode=400")
+
+    val res = TestUploadEvidence.show(errorCode = Some(400))(req)
     status(res) mustBe BAD_REQUEST
     val page = HtmlPage(Jsoup.parse(contentAsString(res)))
 
@@ -132,23 +123,12 @@ class UploadEvidenceSpec extends ControllerSpec with FileUploadTestHelpers {
     page.mustContainFieldErrors(("evidence_", "Please upload some evidence"))
   }
 
-  it must "show an error if the user uploads a file greater than 10MB" in {
+  it must "show an error if the user uploads a file greater than 10MB - when errorCode=413 is set" in {
     withLinkingSession.stubSession(arbitrary[LinkingSession], arbitrary[DetailedIndividualAccount], arbitrary[GroupAccount])
 
-    val req = FakeRequest(Helpers.POST, "/property-linking/upload-evidence")
-      .withMultipartFormDataBody(
-        MultipartFormData(
-          dataParts = Map(
-            "evidenceType" -> Seq(OtherUtilityBill.name)
-          ),
-          files = Seq(
-            FilePart("evidence[]", largeFilePath, Some(validMimeType), largeFile)
-          ),
-          badParts = Nil
-        )
-      )
+    val req = FakeRequest(Helpers.GET, "/property-linking/upload-evidence?errorCode=413")
 
-    val res = TestUploadEvidence.submit()(req)
+    val res = TestUploadEvidence.show(errorCode = Some(413))(req)
     status(res) mustBe BAD_REQUEST
     val page = HtmlPage(Jsoup.parse(contentAsString(res)))
 
@@ -156,23 +136,12 @@ class UploadEvidenceSpec extends ControllerSpec with FileUploadTestHelpers {
     page.mustContainFieldErrors(("evidence_", "File size must be less than 10MB"))
   }
 
-  it must "show an error if the user uploads a file that is not a JPG or PDF" in {
+  it must "show an error if the user uploads a file that is not a JPG or PDF - when errorCode=415 is set" in {
     withLinkingSession.stubSession(arbitrary[LinkingSession], arbitrary[DetailedIndividualAccount], arbitrary[GroupAccount])
 
-    val req = FakeRequest(Helpers.POST, "/property-linking/upload-evidence")
-      .withMultipartFormDataBody(
-        MultipartFormData(
-          dataParts = Map(
-            "evidenceType" -> Seq(OtherUtilityBill.name)
-          ),
-          files = Seq(
-            FilePart("evidence[]", unsupportedFilePath, Some(unsupportedMimeType), unsupportedFile)
-          ),
-          badParts = Nil
-        )
-      )
+    val req = FakeRequest(Helpers.GET, "/property-linking/upload-evidence?errorCode=415")
 
-    val res = TestUploadEvidence.submit()(req)
+    val res = TestUploadEvidence.show(errorCode = Some(415))(req)
     status(res) mustBe BAD_REQUEST
     val page = HtmlPage(Jsoup.parse(contentAsString(res)))
 

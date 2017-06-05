@@ -30,6 +30,9 @@ object ApplicationConfig extends RunMode with ServicesConfig {
   val ggContinueUrl = baseUrl + controllers.routes.Dashboard.home().url
   val ivEnabled = getConfig("featureFlags.ivEnabled").toBoolean
 
+  val fileUploadFrontendUrl = getConfig("file-upload-frontend.url")
+  val propertyLinkingUrl = getConfig("property-linking-frontend.url")
+
   def businessRatesValuationUrl(page: String) = getConfig("business-rates-valuation.url") + s"/$page"
   val casesEnabled = getConfig("featureFlags.casesEnabled").toBoolean
 

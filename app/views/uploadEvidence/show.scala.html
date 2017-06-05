@@ -7,7 +7,7 @@
 @main_template(title = Messages("uploadEvidence.show.title"), bottomBackLink = true, topBackLink = true) {
 
 
-    @form(routes.UploadEvidence.submit(), 'enctype -> "multipart/form-data") {
+    @form(model.fileUploadCall, 'enctype -> "multipart/form-data") {
 
         <div class="grid-row">
             <div class="column-two-thirds">

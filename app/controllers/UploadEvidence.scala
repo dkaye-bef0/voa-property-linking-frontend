@@ -16,15 +16,17 @@
 
 package controllers
 
+import java.util.UUID
 import javax.inject.{Inject, Named}
 
-import config.Wiring
+import config.{ApplicationConfig, Wiring}
 import connectors.EnvelopeConnector
 import connectors.fileUpload.FileUploadConnector
 import form.EnumMapping
 import models._
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.mvc.Call
 import repositories.SessionRepo
 import session.WithLinkingSession
 import views.helpers.Errors
@@ -36,34 +38,16 @@ class UploadEvidence @Inject()(override val fileUploader: FileUploadConnector,
   extends PropertyLinkingController with FileUploadHelpers {
   override val propertyLinks = Wiring().propertyLinkConnector
 
-  def show() = withLinkingSession { implicit request =>
-    Ok(views.html.uploadEvidence.show(UploadEvidenceVM(UploadEvidence.form)))
-  }
-
-  def submit() = withLinkingSession { implicit request =>
-    UploadEvidence.form.bindFromRequest().fold(
-      error => BadRequest(views.html.uploadEvidence.show(UploadEvidenceVM(error))),
-      uploaded => {
-        val filePart = request.request.body.asMultipartFormData.get.file("evidence[]").flatMap(x => if (x.filename.isEmpty) None else Some(x))
-        uploadIfNeeded(filePart) flatMap { x =>
-          x match {
-            case FileAccepted =>
-              val fileInfo = FileInfo(filePart.fold("no file")(_.filename), uploaded.name)
-              sessionRepository.saveOrUpdate[LinkingSession](request.ses.withLinkBasis(OtherEvidenceFlag, Some(fileInfo))) map { _ =>
-                Redirect(propertyLinking.routes.Declaration.show)
-              }
-            case FileTooLarge => BadRequest(
-              views.html.uploadEvidence.show(UploadEvidenceVM(UploadEvidence.form.withError("evidence[]", "error.fileUpload.tooLarge")))
-            )
-            case InvalidFileType => BadRequest(
-              views.html.uploadEvidence.show(UploadEvidenceVM(UploadEvidence.form.withError("evidence[]", "error.fileUpload.invalidFileType")))
-            )
-            case FileMissing => BadRequest(views.html.uploadEvidence.show(
-              UploadEvidenceVM(UploadEvidence.form.withError("evidence[]", Errors.missingFiles))))
-          }
-        }
-      }
-    )
+  def show(errorCode: Option[Int] = None, errorMessage: Option[String] = None) = withLinkingSession { implicit request =>
+    errorCode match {
+      case None => Ok(views.html.uploadEvidence.show(UploadEvidenceVM(UploadEvidence.form, request.ses.envelopeId)))
+      case Some(413) => BadRequest(
+        views.html.uploadEvidence.show(UploadEvidenceVM(UploadEvidence.form.withError("evidence[]", "error.fileUpload.tooLarge"), request.ses.envelopeId)))
+      case Some(415) => BadRequest(
+        views.html.uploadEvidence.show(UploadEvidenceVM(UploadEvidence.form.withError("evidence[]", "error.fileUpload.invalidFileType"), request.ses.envelopeId)))
+      case Some(_) => BadRequest(views.html.uploadEvidence.show(
+        UploadEvidenceVM(UploadEvidence.form.withError("evidence[]", Errors.missingFiles), request.ses.envelopeId)))
+    }
   }
 
   def noEvidenceUploaded() = withLinkingSession { implicit request =>
@@ -79,4 +63,11 @@ object UploadEvidence {
 
 case class UploadedEvidence(hasEvidence: HasEvidence, evidenceType: EvidenceType)
 
-case class UploadEvidenceVM(form: Form[_])
+case class UploadEvidenceVM(form: Form[_], envelopeId: String, fileId: String = UUID.randomUUID().toString) {
+  private val fileUploadBase = ApplicationConfig.fileUploadFrontendUrl
+  private val propertyLinkingBase = ApplicationConfig.propertyLinkingUrl
+
+  val fileUploadCall: Call = Call(method = "GET", url = s"$fileUploadBase/upload/envelopes/$envelopeId/files/$fileId" +
+    s"?redirect-success-url=$propertyLinkingBase/evidence-submitted" +
+    s"&redirect-error-url=$propertyLinkingBase/upload-evidence")
+}
