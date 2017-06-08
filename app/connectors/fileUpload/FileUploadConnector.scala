@@ -39,8 +39,8 @@ case class EnvelopeMetadata(submissionId: String, personId: Long)
 object EnvelopeMetadata {
   implicit val format: Format[EnvelopeMetadata] = (
     (__ \ "metadata" \ "submissionId").format[String] and
-      (__ \ "metadata" \ "personId").format[Long]
-    )(EnvelopeMetadata.apply, unlift(EnvelopeMetadata.unapply))
+    (__ \ "metadata" \ "personId").format[Long]
+  )(EnvelopeMetadata.apply, unlift(EnvelopeMetadata.unapply))
 }
 
 case class RoutingRequest(envelopeId: String, application: String = "application/json", destination: String = "VOA_CCA")
