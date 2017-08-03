@@ -75,10 +75,6 @@ class CreateGroupAccountFormSpec extends FlatSpec with MustMatchers {
     verifyError(form, validData - keys.isAgent, keys.isAgent, "error.boolean")
   }
 
-  it must "require the first line of the address to be non-empty" in {
-    verifyMandatory(form, validData, "address.line1")
-  }
-
   it must "require a postcode" in {
     verifyMandatory(form, validData, "address.postcode")
   }
