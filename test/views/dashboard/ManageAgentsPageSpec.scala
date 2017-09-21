@@ -20,7 +20,6 @@ import controllers.{AgentInfo, ControllerSpec, ManageAgentsVM, routes}
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.i18n.Messages.Implicits._
-import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import resources._
 import utils.HtmlPage

@@ -1,4 +1,5 @@
 @import actions.AuthenticatedRequest
+@import config.ApplicationConfig.config._
 
 @(model: ManageAgentsVM)(implicit request: AuthenticatedRequest[_], messages: Messages)
 
@@ -31,7 +32,7 @@
                         <td >@agent.organisationName</td>
                         <td>@agent.agentCode</td>
                         <td>
-                            <a class="viewManagedProperties" href="@routes.Dashboard.viewManagedProperties(agent.agentCode)">
+                            <a class="viewManagedProperties" href="@managedPropertiesUrl(agent)">
                                 @Messages("dashboard.manageAgents.viewManagedProperties")
                                 <span class="visually hidden"> for @agent.organisationName</span>
                             </a>
@@ -44,4 +45,12 @@
     }
 
     <p>@Html(Messages("manageAgents.howToAppoint", routes.Dashboard.manageProperties().url))</p>
+}
+
+@managedPropertiesUrl(agent: AgentInfo) = @{
+    if(searchSortEnabled) {
+        routes.Dashboard.managePropertiesSearchSort(agent = Some(agent.organisationName))
+    } else {
+        routes.Dashboard.viewManagedProperties(agent.agentCode)
+    }
 }

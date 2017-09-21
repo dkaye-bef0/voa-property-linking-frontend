@@ -10,10 +10,16 @@
 
     root.VOA.DataTableManagePropertiesSearchSort = function (){
 
+        function getURLParameter(name) {
+            return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [null, ''])[1].replace(/\+/g, '%20')) || '';
+        }
+
         var messages = VOA.messages.en,
             $table  = $('#dataTableManagePropertiesSearchSort');
 
         VOA.helper.dataTableSettings($table);
+
+        $('#agent').val(getURLParameter('agent'));
 
         var dataTable = $table.DataTable({
             searching: true,
@@ -24,7 +30,7 @@
                     var info = $table.DataTable().page.info();
                     var queryParameters = '';
                     queryParameters += '&baref=' + $('#baref').val();
-                    queryParameters += '&agent=' + $('#agent').val();
+                    queryParameters += '&agent=' + ($('#agent').val() || getURLParameter('agent'));
                     queryParameters += '&address=' + $('#address').val();
                     queryParameters += '&status=' + $('#status').val();
 

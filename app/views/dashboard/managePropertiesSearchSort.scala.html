@@ -164,15 +164,11 @@
                     Showing
                     @if(model.result.authorisations.isEmpty) {
                         0
-                    }else{
+                    }else {
                         @model.pagination.startPoint
-                    }                    @if(model.result.authorisations.isEmpty) {
-                    0
-                }else{
-                    @model.pagination.startPoint
-                }
-                    to @{
-                    model.pagination.totalResults.min(model.pagination.startPoint + model.pagination.pageSize - 1) } of @model.pagination.totalResults</p>
+                    }
+                    to
+                    @{ model.pagination.totalResults.min(model.pagination.startPoint + model.pagination.pageSize - 1) } of @model.pagination.totalResults</p>
 
                 <div role="navigation" aria-label="Pagination">
                     <ul class="pagination">
