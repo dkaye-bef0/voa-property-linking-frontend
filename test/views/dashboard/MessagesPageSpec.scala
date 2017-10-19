@@ -53,9 +53,11 @@ class MessagesPageSpec extends ControllerSpec {
     } else {
       routes.Dashboard.manageProperties().url
     }
-    
+
     val expectedTabLinks = Seq(
       managePropertiesUrl,
+    val expectedTabLinks = Seq(
+      routes.Dashboard.managePropertiesSearchSort().url,
       routes.Dashboard.manageAgents().url,
       routes.Dashboard.viewDraftCases().url,
       controllers.manageDetails.routes.ViewDetails.show().url,
