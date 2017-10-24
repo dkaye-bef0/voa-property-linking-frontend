@@ -75,12 +75,23 @@
     }
 }
 
+@serviceInfoContentBanner = {
+@if(appConfig.isDowntime){
+<div class="beta-banner">
+    <p>
+        <span>@Messages("planned.downtime.banner")</span>
+    </p>
+</div>
+} else {
+@serviceInfoContent
+}
+}
 @serviceInfo = {
     @banner
     @uiLayouts.serviceInfo(
         betaBanner = betaBanner,
         includeGridWrapper = false,
-        serviceInfoContent = Some(serviceInfoContent),
+        serviceInfoContent = Some(serviceInfoContentBanner),
         includeHMRCBranding = false
         )
 }
