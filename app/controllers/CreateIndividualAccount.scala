@@ -18,7 +18,7 @@ package controllers
 
 import javax.inject.{Inject, Named}
 
-import auth.GGAction
+import auth.{GGAction, xxx}
 import connectors.{IndividualAccounts, VPLAuthConnector}
 import form.Mappings._
 import form.TextMatching
@@ -32,7 +32,7 @@ import uk.gov.hmrc.domain.Nino
 import views.helpers.Errors
 import uk.gov.hmrc.http.SessionKeys
 
-class CreateIndividualAccount @Inject() (ggAction: GGAction,
+class CreateIndividualAccount @Inject() (ggAction: xxx,
                                          auth: VPLAuthConnector,
                                          individuals: IndividualAccounts,
                                           @Named ("personSession") val personalDetailsSessionRepo: SessionRepo)

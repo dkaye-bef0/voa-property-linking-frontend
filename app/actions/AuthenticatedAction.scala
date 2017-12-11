@@ -86,7 +86,7 @@ class AuthenticatedAction @Inject()(provider: GovernmentGatewayProvider,
   private def handleResult(result: AuthorisationResult, body: BasicAuthenticatedRequest[AnyContent] => Future[Result])
                           (implicit request: Request[AnyContent]) = {
     result match {
-      case Authenticated(accounts) => body(BasicAuthenticatedRequest(accounts.organisation, accounts.person, request))
+      case Authenticated(accounts) => body(BasicAuthenticatedRequest(accounts.organisation, accounts.person, request)) //Add enrolment check here. to create enrolments for old users.
       case InvalidGGSession => provider.redirectToLogin
       case NoVOARecord => Future.successful(Redirect(controllers.routes.CreateIndividualAccount.show))
       case IncorrectTrustId => Future.successful(Unauthorized("Trust ID does not match"))
